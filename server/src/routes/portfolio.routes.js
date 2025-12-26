@@ -1,6 +1,8 @@
 import express from "express";
 import Portfolio from "../models/Portfolio.js";
 import auth from "../middleware/auth.js";
+import { getLivePrice } from "../utils/marketService.js";
+
 
 const router = express.Router();
 
@@ -35,11 +37,45 @@ router.post("/add", auth, async (req, res) => {
 router.get("/", auth, async (req, res) => {
   try {
     const portfolio = await Portfolio.findOne({ userId: req.user });
-    res.json(portfolio || { stocks: [] });
+
+    if (!portfolio) return res.json({ stocks: [] });
+
+    const enrichedStocks = [];
+
+    for (const stock of portfolio.stocks) {
+      const live = await getLivePrice(stock.symbol);
+
+      if (!live?.price) continue;
+
+      const currentPrice = live.price;
+
+      const investedValue = stock.buyPrice * stock.quantity;
+      const currentValue = currentPrice * stock.quantity;
+      const profitLoss = currentValue - investedValue;
+      const profitLossPercent = ((profitLoss / investedValue) * 100).toFixed(2);
+
+      enrichedStocks.push({
+        symbol: stock.symbol,
+        quantity: stock.quantity,
+        buyPrice: stock.buyPrice,
+        currentPrice,
+        investedValue,
+        currentValue,
+        profitLoss,
+        profitLossPercent
+      });
+    }
+
+    res.json({
+      userId: portfolio.userId,
+      stocks: enrichedStocks
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+  
 
 /*
  Remove Stock

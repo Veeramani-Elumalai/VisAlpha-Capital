@@ -1,28 +1,42 @@
+# -------------------------
 # Node
-node_modules
+# -------------------------
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+dist/
+build/
+.cache/
 
-# Build
-dist
-build
-
-# Env files
+# -------------------------
+# Environment files
+# -------------------------
 .env
 .env.local
-.env.development.local
-.env.production.local
-.env.test.local
+.env.development
+.env.production
 
-# Logs
-logs
-*.log
+# -------------------------
+# Python
+# -------------------------
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pytest_cache/
+.mypy_cache/
+.venv/
 
-# OS
+# -------------------------
+# OS files
+# -------------------------
 .DS_Store
 Thumbs.db
 
-# Editor
+# -------------------------
+# IDE
+# -------------------------
 .vscode/
 .idea/
