@@ -2,6 +2,8 @@ import { useState } from "react";
 import { loginUser } from "../services/authService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { Link } from "react-router-dom";
+
 
 
 export default function Login() {
@@ -50,6 +52,14 @@ export default function Login() {
         <button style={styles.button} type="submit">
           Login
         </button>
+
+        <p style={{ marginTop: "10px" }}>
+          Don't have an account?
+          <Link to="/register" style={{ color: "#2563eb", textDecoration: "none" }}>
+            Create one
+          </Link>
+        </p>
+
 
         <GoogleLogin
           onSuccess={async (credentialResponse) => {
