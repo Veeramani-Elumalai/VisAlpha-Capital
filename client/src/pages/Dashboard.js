@@ -83,6 +83,33 @@ export default function Dashboard() {
       </div>
     );
 
+   // ---------------- Remove Stocks ----------------
+  const removeStock = async (symbol) => {
+  if (!window.confirm(`Remove ${symbol}?`)) return;
+
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/portfolio/remove/${symbol}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      alert("Stock Removed");
+      window.location.reload();
+    } catch (err) {
+      alert("Failed to remove");
+    }
+  };
+
+  const investedTotal = portfolio.reduce((t, s) => t + s.investedValue, 0);
+  const currentTotal = portfolio.reduce((t, s) => t + s.currentValue, 0);
+  const profitTotal = currentTotal - investedTotal;
+  const profitPercent = investedTotal > 0 ? ((profitTotal / investedTotal) * 100).toFixed(2) : 0;
+
+
   return (
     <div className="dashboard">
       <header className="top-bar">
@@ -91,6 +118,34 @@ export default function Dashboard() {
           Logout
         </button>
       </header>
+      
+     {/* ---------- P/L Overall ---------- */}
+
+      <div className="summary">
+        <div>
+          <h4>Invested Amount</h4>
+          <p>${investedTotal.toFixed(2)}</p>
+        </div>
+
+        <div>
+          <h4>Current Value</h4>
+          <p>${currentTotal.toFixed(2)}</p>
+        </div>
+
+        <div>
+          <h4>P/L</h4>
+          <p style={{ color: profitTotal >= 0 ? "limegreen" : "red" }}>
+            {profitTotal >= 0 ? `+${profitTotal.toFixed(2)}` : profitTotal.toFixed(2)}
+          </p>
+        </div>
+
+        <div>
+          <h4>Overall Gain %</h4>
+          <p style={{ color: profitTotal >= 0 ? "limegreen" : "red" }}>
+            {profitPercent}%
+          </p>
+        </div>
+      </div>
 
       {/* ---------- ADD STOCK FORM ---------- */}
       <form className="add-box" onSubmit={addStock}>
@@ -136,6 +191,7 @@ export default function Dashboard() {
                 <th>Buy Price</th>
                 <th>Current Price</th>
                 <th>P/L (%)</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -152,6 +208,14 @@ export default function Dashboard() {
                     }}
                   >
                     {stock.profitLossPercent}%
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => removeStock(stock.symbol)}
+                      className="remove"
+                    >
+                      ❌
+                    </button>
                   </td>
                 </tr>
               ))}

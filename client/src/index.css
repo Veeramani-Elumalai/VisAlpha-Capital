@@ -68,6 +68,42 @@ td {
   text-align: center;
 }
 
+.remove {
+  background: red;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: darkred;
+}
+
+.summary {
+  margin: 20px 0;
+  background: #020617;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  color: white;
+}
+
+.summary div h4 {
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.summary div p {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+
 /* ---------- RESPONSIVE ---------- */
 
 @media (max-width: 768px) {
@@ -140,5 +176,10 @@ td {
   .add-box input,
   .add-box button {
     width: 100%;
+  }
+
+  .summary {
+    flex-direction: column;
+    gap: 10px;
   }
 }
