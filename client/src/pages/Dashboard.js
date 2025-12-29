@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Pie } from "react-chartjs-2";
+import "chart.js/auto";
+
 
 export default function Dashboard() {
   const [portfolio, setPortfolio] = useState([]);
@@ -112,7 +115,6 @@ export default function Dashboard() {
   const dailyChangePercent = currentTotal > 0 ? ((dailyChangeTotal / currentTotal) * 100).toFixed(2) : 0;
 
 
-
   return (
     <div className="dashboard">
       <header className="top-bar">
@@ -122,7 +124,7 @@ export default function Dashboard() {
         </button>
       </header>
       
-     {/* ---------- P/L Overall ---------- */}
+     {/* ---------- P/L Summary ---------- */}
 
       <div className="summary">
         <div>
@@ -157,6 +159,107 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {/* ---------- Pie Wrapper ---------- */}
+
+      <div className="charts-row">
+
+        {/* ---------- Holdings Pie ---------- */}
+
+        {portfolio.length > 0 && (
+          <div className="chart small">
+            <h3 style={{ color: "white" }}>Holdings Allocation</h3>
+
+            <Pie
+              data={{
+                labels: portfolio.map(s => s.symbol),
+                datasets: [
+                  {
+                    data: portfolio.map(s => s.currentValue),
+                    backgroundColor: [
+                      "#22c55e",
+                      "#3b82f6",
+                      "#eab308",
+                      "#ef4444",
+                      "#a855f7",
+                      "#14b8a6",
+                      "#f97316"
+                    ]
+                  }
+                ]
+              }}
+              options={{
+                plugins: {
+                  tooltip: {
+                    callbacks: {
+                      label: function (context) {
+                        const label = context.label || "";
+                        const value = context.raw || 0;
+
+                        const total = context.chart._metasets[0].total;
+                        const percentage = ((value / total) * 100).toFixed(2);
+
+                        return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                      }
+                    }
+                  }
+                }
+              }}
+            />
+
+          </div>
+        )}
+
+        {/* ---------- Sectorwise Pie ---------- */}
+
+        {portfolio.length > 0 && (
+          <div className="chart small">
+            <h3 style={{ color: "white" }}>Sector Allocation</h3>
+
+            <Pie
+              data={{
+                labels: [...new Set(portfolio.map(s => s.sector))],
+                datasets: [
+                  {
+                    data: [...new Set(portfolio.map(s => s.sector))].map(sec =>
+                      portfolio
+                        .filter(s => s.sector === sec)
+                        .reduce((t, s) => t + s.currentValue, 0)
+                    ),
+                    backgroundColor: [
+                      "#3b82f6",
+                      "#22c55e",
+                      "#eab308",
+                      "#f43f5e",
+                      "#a855f7",
+                      "#06b6d4"
+                    ]
+                  }
+                ]
+              }}
+              options={{
+                plugins: {
+                  tooltip: {
+                    callbacks: {
+                      label: function (context) {
+                        const label = context.label || "";
+                        const value = context.raw || 0;
+
+                        const total = context.chart._metasets[0].total;
+                        const percentage = ((value / total) * 100).toFixed(2);
+
+                        return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                      }
+                    }
+                  }
+                }
+              }}
+            />
+
+          </div>
+        )}
+      </div>
+
 
       {/* ---------- ADD STOCK FORM ---------- */}
       <form className="add-box" onSubmit={addStock}>
@@ -201,8 +304,8 @@ export default function Dashboard() {
                 <th>Qty</th>
                 <th>Buy Price</th>
                 <th>Current Price</th>
-                <th>Daily Change</th>
                 <th>P/L (%)</th>
+                <th>Daily Change</th>
                 <th>Remove</th>
               </tr>
             </thead>

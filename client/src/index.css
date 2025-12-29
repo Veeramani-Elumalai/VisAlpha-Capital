@@ -103,6 +103,27 @@ td {
   font-weight: bold;
 }
 
+.chart {
+  background: #020617;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.charts-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.chart.small {
+  width: 38%;
+  background: #020617;
+  padding: 15px;
+  border-radius: 12px;
+}
+
 
 /* ---------- RESPONSIVE ---------- */
 
@@ -181,5 +202,15 @@ td {
   .summary {
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+@media (max-width: 900px) {
+  .charts-row {
+    flex-direction: column;
+  }
+
+  .chart.small {
+    width: 100%;
   }
 }

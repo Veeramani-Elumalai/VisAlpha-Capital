@@ -108,7 +108,8 @@ router.get("/", auth, async (req, res) => {
         profitLossPercent,
         previousClose: live.previousClose,
         dayChange: live.dayChange,
-        dayChangePercent: live.dayChangePercent
+        dayChangePercent: live.dayChangePercent,
+        sector: live.sector || "Unknown"
       });
 
     }
