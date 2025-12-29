@@ -2,16 +2,42 @@ import express from "express";
 import Portfolio from "../models/Portfolio.js";
 import auth from "../middleware/auth.js";
 import { getLivePrice } from "../utils/marketService.js";
-
+import axios from "axios";
 
 const router = express.Router();
 
 /*
- Add Stock to Portfolio
+ Add Stock to Portfolio (with validation)
 */
 router.post("/add", auth, async (req, res) => {
   try {
-    const { symbol, quantity, buyPrice } = req.body;
+    let { symbol, quantity, buyPrice } = req.body;
+
+    if (!symbol || !quantity || !buyPrice) {
+      return res.status(400).json({ msg: "All fields are required" });
+    }
+
+    symbol = symbol.trim().toUpperCase();
+
+    // Block obvious invalid symbols
+    if (!/^[A-Z]{1,6}$/.test(symbol)) {
+      return res.status(400).json({ msg: "Invalid stock symbol" });
+    }
+
+    // Validate using Python microservice
+    let liveData;
+    try {
+      const response = await axios.get(
+        `http://127.0.0.1:8000/price/${symbol}`
+      );
+      liveData = response.data;
+    } catch (err) {
+      return res.status(400).json({ msg: "Invalid Stock Symbol" });
+    }
+
+    if (!liveData?.price || liveData.price <= 0) {
+      return res.status(400).json({ msg: "Invalid Stock Symbol" });
+    }
 
     let portfolio = await Portfolio.findOne({ userId: req.user });
 
@@ -22,14 +48,23 @@ router.post("/add", auth, async (req, res) => {
       });
     }
 
+    // prevent duplicate stock
+    const exists = portfolio.stocks.find(s => s.symbol === symbol);
+    if (exists) {
+      return res.status(400).json({ msg: "Stock already exists in portfolio" });
+    }
+
     portfolio.stocks.push({ symbol, quantity, buyPrice });
     await portfolio.save();
 
-    res.json({ msg: "Stock added", portfolio });
+    res.json({ msg: "Stock added successfully", portfolio });
+
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 /*
  Get User Portfolio
@@ -44,7 +79,6 @@ router.get("/", auth, async (req, res) => {
 
     for (const stock of portfolio.stocks) {
       const live = await getLivePrice(stock.symbol);
-
       if (!live?.price) continue;
 
       const currentPrice = live.price;
@@ -75,7 +109,6 @@ router.get("/", auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-  
 
 /*
  Remove Stock
@@ -93,6 +126,7 @@ router.delete("/remove/:symbol", auth, async (req, res) => {
 
     await portfolio.save();
     res.json({ msg: "Stock removed", portfolio });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
