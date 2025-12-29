@@ -13,31 +13,27 @@ router.post("/add", auth, async (req, res) => {
   try {
     let { symbol, quantity, buyPrice } = req.body;
 
-    if (!symbol || !quantity || !buyPrice) {
+    if (!symbol || !quantity || !buyPrice)
       return res.status(400).json({ msg: "All fields are required" });
-    }
 
     symbol = symbol.trim().toUpperCase();
 
-    // Block obvious invalid symbols
-    if (!/^[A-Z]{1,6}$/.test(symbol)) {
+    if (!/^[A-Z]{1,6}$/.test(symbol))
       return res.status(400).json({ msg: "Invalid stock symbol" });
-    }
 
-    // Validate using Python microservice
+    // Validate via Python service
     let liveData;
     try {
       const response = await axios.get(
         `http://127.0.0.1:8000/price/${symbol}`
       );
       liveData = response.data;
-    } catch (err) {
+    } catch {
       return res.status(400).json({ msg: "Invalid Stock Symbol" });
     }
 
-    if (!liveData?.price || liveData.price <= 0) {
+    if (!liveData?.price || liveData.price <= 0)
       return res.status(400).json({ msg: "Invalid Stock Symbol" });
-    }
 
     let portfolio = await Portfolio.findOne({ userId: req.user });
 
@@ -48,23 +44,36 @@ router.post("/add", auth, async (req, res) => {
       });
     }
 
-    // prevent duplicate stock
-    const exists = portfolio.stocks.find(s => s.symbol === symbol);
-    if (exists) {
-      return res.status(400).json({ msg: "Stock already exists in portfolio" });
+    // 👉 CHECK IF STOCK ALREADY EXISTS
+    const existing = portfolio.stocks.find(s => s.symbol === symbol);
+
+    if (existing) {
+      const oldQty = existing.quantity;
+      const oldBuy = existing.buyPrice;
+
+      const newQty = Number(quantity);
+      const newBuy = Number(buyPrice);
+
+      // Weighted Average Cost Formula
+      const totalInvestment = oldQty * oldBuy + newQty * newBuy;
+      const totalShares = oldQty + newQty;
+      const avgPrice = totalInvestment / totalShares;
+
+      existing.quantity = totalShares;
+      existing.buyPrice = avgPrice;
+    } else {
+      portfolio.stocks.push({ symbol, quantity, buyPrice });
     }
 
-    portfolio.stocks.push({ symbol, quantity, buyPrice });
     await portfolio.save();
 
-    res.json({ msg: "Stock added successfully", portfolio });
+    res.json({ msg: "Stock updated successfully", portfolio });
 
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 /*
  Get User Portfolio
@@ -96,8 +105,12 @@ router.get("/", auth, async (req, res) => {
         investedValue,
         currentValue,
         profitLoss,
-        profitLossPercent
+        profitLossPercent,
+        previousClose: live.previousClose,
+        dayChange: live.dayChange,
+        dayChangePercent: live.dayChangePercent
       });
+
     }
 
     res.json({

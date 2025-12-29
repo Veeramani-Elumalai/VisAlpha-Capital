@@ -108,6 +108,9 @@ export default function Dashboard() {
   const currentTotal = portfolio.reduce((t, s) => t + s.currentValue, 0);
   const profitTotal = currentTotal - investedTotal;
   const profitPercent = investedTotal > 0 ? ((profitTotal / investedTotal) * 100).toFixed(2) : 0;
+  const dailyChangeTotal = portfolio.reduce((t, s) => t + s.dayChange * s.quantity, 0);
+  const dailyChangePercent = currentTotal > 0 ? ((dailyChangeTotal / currentTotal) * 100).toFixed(2) : 0;
+
 
 
   return (
@@ -136,6 +139,14 @@ export default function Dashboard() {
           <h4>P/L</h4>
           <p style={{ color: profitTotal >= 0 ? "limegreen" : "red" }}>
             {profitTotal >= 0 ? `+${profitTotal.toFixed(2)}` : profitTotal.toFixed(2)}
+          </p>
+        </div>
+
+        <div>
+          <h4>Daily Change</h4>
+          <p style={{ color: dailyChangeTotal >= 0 ? "limegreen" : "red" }}>
+            {dailyChangeTotal >= 0 ? "+" : ""}
+            {dailyChangeTotal.toFixed(2)} ({dailyChangePercent}%)
           </p>
         </div>
 
@@ -190,8 +201,9 @@ export default function Dashboard() {
                 <th>Qty</th>
                 <th>Buy Price</th>
                 <th>Current Price</th>
+                <th>Daily Change</th>
                 <th>P/L (%)</th>
-                <th>Action</th>
+                <th>Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -209,6 +221,17 @@ export default function Dashboard() {
                   >
                     {stock.profitLossPercent}%
                   </td>
+                  <td
+                    style={{
+                      color:
+                        stock.dayChangePercent >= 0 ? "limegreen" : "red",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    {stock.dayChangePercent > 0 ? "+" : ""}
+                    {stock.dayChangePercent}%
+                  </td>
+
                   <td>
                     <button
                       onClick={() => removeStock(stock.symbol)}
