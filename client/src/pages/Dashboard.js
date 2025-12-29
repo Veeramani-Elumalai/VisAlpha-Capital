@@ -113,6 +113,12 @@ export default function Dashboard() {
   const profitPercent = investedTotal > 0 ? ((profitTotal / investedTotal) * 100).toFixed(2) : 0;
   const dailyChangeTotal = portfolio.reduce((t, s) => t + s.dayChange * s.quantity, 0);
   const dailyChangePercent = currentTotal > 0 ? ((dailyChangeTotal / currentTotal) * 100).toFixed(2) : 0;
+  const customTooltip = {
+    id: "customTooltip",
+    beforeRender(chart, args, opts) {
+      chart._activeElements = [];
+    }
+  };
 
 
   return (
@@ -191,20 +197,59 @@ export default function Dashboard() {
               options={{
                 plugins: {
                   tooltip: {
-                    callbacks: {
-                      label: function (context) {
-                        const label = context.label || "";
-                        const value = context.raw || 0;
+                    enabled: false,
+                    external: (ctx) => {
+                      let tooltipModel = ctx.tooltip;
+                      let tooltipEl = document.getElementById("chartjs-tooltip");
 
-                        const total = context.chart._metasets[0].total;
-                        const percentage = ((value / total) * 100).toFixed(2);
-
-                        return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                      if (!tooltipEl) {
+                        tooltipEl = document.createElement("div");
+                        tooltipEl.id = "chartjs-tooltip";
+                        tooltipEl.style.position = "absolute";
+                        tooltipEl.style.background = "rgba(0,0,0,.85)";
+                        tooltipEl.style.color = "white";
+                        tooltipEl.style.padding = "10px";
+                        tooltipEl.style.borderRadius = "8px";
+                        tooltipEl.style.pointerEvents = "none";
+                        tooltipEl.style.fontSize = "14px";
+                        document.body.appendChild(tooltipEl);
                       }
+
+                      if (tooltipModel.opacity === 0) {
+                        tooltipEl.style.opacity = 0;
+                        return;
+                      }
+
+                      const index = tooltipModel.dataPoints[0].dataIndex;
+                      const s = portfolio[index];
+
+                      const invested = s.investedValue || 0;
+                      const current = s.currentValue || 0;
+                      const gain = current - invested;
+                      const gainPercent =
+                        invested > 0 ? ((gain / invested) * 100).toFixed(2) : 0;
+
+                      tooltipEl.innerHTML = `
+                        <div><b>${s.symbol}</b></div>
+                        <div>Inv = $${invested.toFixed(2)}</div>
+                        <div>Current = $${current.toFixed(2)}</div>
+                        <div style="color:${gain >= 0 ? "limegreen" : "red"};">
+                          ${gain >= 0 ? "Gain" : "Loss"} =
+                          ${gain >= 0 ? "+" : ""}${gain.toFixed(2)}
+                          (${gainPercent}%)
+                        </div>`;
+
+                      const canvasRect = ctx.chart.canvas.getBoundingClientRect();
+                      tooltipEl.style.opacity = 1;
+                      tooltipEl.style.left =
+                        canvasRect.left + window.scrollX + tooltipModel.caretX + "px";
+                      tooltipEl.style.top =
+                        canvasRect.top + window.scrollY + tooltipModel.caretY + "px";
                     }
                   }
                 }
               }}
+              plugins={[customTooltip]}
             />
 
           </div>
@@ -237,19 +282,69 @@ export default function Dashboard() {
                   }
                 ]
               }}
+
               options={{
                 plugins: {
                   tooltip: {
-                    callbacks: {
-                      label: function (context) {
-                        const label = context.label || "";
-                        const value = context.raw || 0;
+                    enabled: false,
+                    external: (ctx) => {
+                      let tooltipModel = ctx.tooltip;
+                      let tooltipEl = document.getElementById("sector-tooltip");
 
-                        const total = context.chart._metasets[0].total;
-                        const percentage = ((value / total) * 100).toFixed(2);
-
-                        return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                      if (!tooltipEl) {
+                        tooltipEl = document.createElement("div");
+                        tooltipEl.id = "sector-tooltip";
+                        tooltipEl.style.position = "absolute";
+                        tooltipEl.style.background = "rgba(0,0,0,.85)";
+                        tooltipEl.style.color = "white";
+                        tooltipEl.style.padding = "10px";
+                        tooltipEl.style.borderRadius = "8px";
+                        tooltipEl.style.pointerEvents = "none";
+                        tooltipEl.style.fontSize = "14px";
+                        document.body.appendChild(tooltipEl);
                       }
+
+                      if (tooltipModel.opacity === 0) {
+                        tooltipEl.style.opacity = 0;
+                        return;
+                      }
+
+                      const index = tooltipModel.dataPoints[0].dataIndex;
+                      const sector = ctx.chart.data.labels[index];
+
+                      const sectorStocks = portfolio.filter(s => s.sector === sector);
+
+                      const invested = sectorStocks.reduce(
+                        (t, s) => t + s.investedValue,
+                        0
+                      );
+
+                      const current = sectorStocks.reduce(
+                        (t, s) => t + s.currentValue,
+                        0
+                      );
+
+                      const gain = current - invested;
+                      const gainPercent =
+                        invested > 0 ? ((gain / invested) * 100).toFixed(2) : 0;
+
+                      tooltipEl.innerHTML = `
+                        <div><b>${sector}</b></div>
+                        <div>Inv = $${invested.toFixed(2)}</div>
+                        <div>Current = $${current.toFixed(2)}</div>
+                        <div style="color:${gain >= 0 ? "limegreen" : "red"};">
+                          ${gain >= 0 ? "Gain" : "Loss"} =
+                          ${gain >= 0 ? "+" : ""}${gain.toFixed(2)}
+                          (${gainPercent}%)
+                        </div>
+                      `;
+
+                      const canvasRect = ctx.chart.canvas.getBoundingClientRect();
+                      tooltipEl.style.opacity = 1;
+                      tooltipEl.style.left =
+                        canvasRect.left + window.scrollX + tooltipModel.caretX + "px";
+                      tooltipEl.style.top =
+                        canvasRect.top + window.scrollY + tooltipModel.caretY + "px";
                     }
                   }
                 }
