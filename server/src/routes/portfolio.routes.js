@@ -147,3 +147,64 @@ router.delete("/remove/:symbol", auth, async (req, res) => {
 });
 
 export default router;
+
+/*
+ Chart graph
+*/
+
+router.get("/performance", auth, async (req, res) => {
+  try {
+    const portfolio = await Portfolio.findOne({ userId: req.user });
+    if (!portfolio || portfolio.stocks.length === 0)
+      return res.json({ history: [], benchmark: [] });
+
+    const days = Number(req.query.days) || 30;
+
+    let dateMap = {};
+
+    for (const stock of portfolio.stocks) {
+      const { data } = await axios.get(
+        `http://127.0.0.1:8000/history/${stock.symbol}?days=${days}`
+      );
+
+      data.history.forEach(day => {
+        if (!dateMap[day.date]) dateMap[day.date] = 0;
+        dateMap[day.date] += day.price * stock.quantity;
+      });
+    }
+
+    const raw = Object.keys(dateMap).map(date => ({
+      date,
+      value: Number(dateMap[date].toFixed(2)),
+    }));
+
+    const base = raw[0]?.value || 1;
+
+    const portfolioHistory = raw.map(p => ({
+      date: p.date,
+      value: Number(((p.value / base) * 100).toFixed(2))
+    }));
+
+
+    // Benchmark S&P 500
+    const benchRes = await axios.get(
+      `http://127.0.0.1:8000/history/^GSPC?days=${days}`
+    );
+
+    const benchRaw = benchRes.data.history;
+    const benchBase = benchRaw[0]?.price || 1;
+
+    const benchmark = benchRaw.map(h => ({
+      date: h.date,
+      value: Number(((h.price / benchBase) * 100).toFixed(2))
+    }));
+
+
+    res.json({ portfolio: portfolioHistory, benchmark });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+

@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
-
+import { Line } from "react-chartjs-2";
 
 export default function Dashboard() {
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [perf, setPerf] = useState([]);
+  const [bench, setBench] = useState([]);
+  const [range, setRange] = useState(30);
+
 
   // Add Stock Input States
   const [symbol, setSymbol] = useState("");
@@ -41,6 +45,29 @@ export default function Dashboard() {
 
     fetchPortfolio();
   }, []);
+
+  useEffect(() => {
+    const loadPerf = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/portfolio/performance?days=${range}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        setPerf(res.data.portfolio);
+        setBench(res.data.benchmark);
+      } catch (e) {
+        console.log("Performance fetch failed", e.message);
+      }
+    };
+
+    loadPerf();
+  }, [range]);
+
 
   // ---------------- ADD STOCK FUNCTION ----------------
   const addStock = async (e) => {
@@ -442,6 +469,71 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ---------- PERFORMANCE CHART ---------- */}
+      {perf.length > 0 && (
+        <div className="chart">
+          
+          {/* HEADER + RANGE BUTTONS */}
+          <div style={{ display: "flex", justifyContent: "space-between", color: "white" }}>
+            <h3>Portfolio vs S&P 500</h3>
+
+            <div>
+              <button onClick={() => setRange(7)}>7D</button>
+              <button onClick={() => setRange(30)}>1M</button>
+              <button onClick={() => setRange(90)}>3M</button>
+              <button onClick={() => setRange(365)}>1Y</button>
+            </div>
+          </div>
+
+          {/* CHART */}
+          <Line
+            data={{
+              labels: perf.map(p => p.date),
+
+              datasets: [
+                {
+                  label: "Portfolio (%)",
+                  data: perf.map(p => p.value),
+                  borderColor: "#22c55e",
+                  tension: 0.4,
+                },
+                {
+                  label: "S&P 500 (%)",
+                  data: bench.map(b => b.value),
+                  borderColor: "#3b82f6",
+                  tension: 0.4,
+                }
+              ]
+            }}
+          />
+
+          {/* RETURN STATS */}
+          <div style={{ color: "white", marginTop: "10px" }}>
+            <p>
+              Portfolio Return:
+              <b style={{ color: perf.at(-1).value >= 100 ? "limegreen" : "red" }}>
+                {(perf.at(-1).value - 100).toFixed(2)}%
+              </b>
+            </p>
+
+            <p>
+              S&P 500 Return:
+              <b style={{ color: bench.at(-1).value >= 100 ? "limegreen" : "red" }}>
+                {(bench.at(-1).value - 100).toFixed(2)}%
+              </b>
+            </p>
+
+            <p>
+              Outperformance:
+              <b style={{ color: (perf.at(-1).value - bench.at(-1).value) >= 0 ? "limegreen" : "red" }}>
+                {(perf.at(-1).value - bench.at(-1).value).toFixed(2)}%
+              </b>
+            </p>
+          </div>
+
         </div>
       )}
     </div>
