@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Register from "./pages/Register";
+import Screener from "./pages/screener";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         />
 
         <Route path="/register" element={<Register />} />
+        <Route path="/screener" element={<Screener />} />
       </Routes>
     </BrowserRouter>
   );

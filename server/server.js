@@ -21,10 +21,12 @@ app.get("/", (req, res) => {
 import authRoutes from "./src/routes/auth.routes.js";
 import portfolioRoutes from "./src/routes/portfolio.routes.js";
 import stockRoutes from "./src/routes/stock.routes.js";
+import screenerRoutes from "./src/routes/screener.routes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/stock", stockRoutes);
+app.use("/api/screener", screenerRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
