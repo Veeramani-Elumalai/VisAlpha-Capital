@@ -18,12 +18,14 @@ import authRoutes from "./src/routes/auth.routes.js";
 import portfolioRoutes from "./src/routes/portfolio.routes.js";
 import stockRoutes from "./src/routes/stock.routes.js";
 import screenerRoutes from "./src/routes/screener.routes.js";
+import sectorRoutes from "./src/routes/sector.routes.js";
 
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/screener", screenerRoutes);
+app.use("/api/sector", sectorRoutes);
 
 // Default route
 app.get("/", (req, res) => {

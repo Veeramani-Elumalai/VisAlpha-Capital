@@ -113,9 +113,9 @@ export default function Dashboard() {
       </div>
     );
 
-   // ---------------- Remove Stocks ----------------
+  // ---------------- Remove Stocks ----------------
   const removeStock = async (symbol) => {
-  if (!window.confirm(`Remove ${symbol}?`)) return;
+    if (!window.confirm(`Remove ${symbol}?`)) return;
 
     try {
       await axios.delete(
@@ -155,9 +155,15 @@ export default function Dashboard() {
         <button onClick={handleLogout} className="logout">
           Logout
         </button>
+        <a href="/sector-analysis" className="logout" style={{ background: "#3b82f6", textDecoration: "none", marginLeft: "10px" }}>
+          Sector Analysis
+        </a>
+        <a href="/screener" className="logout" style={{ background: "#a855f7", textDecoration: "none", marginLeft: "10px" }}>
+          Screener
+        </a>
       </header>
-      
-     {/* ---------- P/L Summary ---------- */}
+
+      {/* ---------- P/L Summary ---------- */}
 
       <div className="summary">
         <div>
@@ -475,7 +481,7 @@ export default function Dashboard() {
       {/* ---------- PERFORMANCE CHART ---------- */}
       {perf.length > 0 && (
         <div className="chart">
-          
+
           {/* HEADER + RANGE BUTTONS */}
           <div style={{ display: "flex", justifyContent: "space-between", color: "white" }}>
             <h3>Portfolio vs S&P 500</h3>
