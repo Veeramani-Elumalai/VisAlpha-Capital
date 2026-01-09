@@ -2,18 +2,22 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const SECTORS = ["Technology", "Finance", "Healthcare", "Consumer", "Energy", "Industrial"];
 
 export default function SectorAnalysis() {
     const [sector, setSector] = useState("Technology");
+    const [customSector, setCustomSector] = useState("");
     const [data, setData] = useState(null);
     const [sortedData, setSortedData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [searchParams] = useSearchParams();
 
     // Sorting State
     const [sortConfig, setSortConfig] = useState({ key: "marketCap", direction: "desc" });
+    const navigate = useNavigate();
 
     const fetchSectorData = useCallback(async (sectorName) => {
         setLoading(true);
@@ -22,15 +26,26 @@ export default function SectorAnalysis() {
             const res = await axios.get(`http://localhost:5000/api/sector/${sectorName}`);
             setData(res.data);
         } catch (err) {
-            setError("Failed to fetch sector data. Ensure services are running.");
+            if (err.response && err.response.status === 404) {
+                setError("Sector not found. Please try another name.");
+            } else {
+                setError("Failed to fetch sector data. Ensure services are running.");
+            }
+            setData(null);
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchSectorData(sector);
-    }, [sector, fetchSectorData]);
+        const querySector = searchParams.get("sector");
+        if (querySector) {
+            setSector(querySector);
+            fetchSectorData(querySector);
+        } else {
+            fetchSectorData(sector);
+        }
+    }, [searchParams, fetchSectorData]);
 
     const sortArray = useCallback((arr, key, direction) => {
         const sorted = [...arr].sort((a, b) => {
@@ -82,11 +97,15 @@ export default function SectorAnalysis() {
             </header>
 
             {/* ---------- Search & Filter ---------- */}
-            <div className="add-box" style={{ marginTop: "20px", alignItems: "center" }}>
+            <div className="add-box" style={{ marginTop: "20px", alignItems: "center", gap: "10px" }}>
                 <h3 style={{ margin: 0 }}>Select Sector:</h3>
                 <select
-                    value={sector}
-                    onChange={(e) => setSector(e.target.value)}
+                    value={SECTORS.includes(sector) ? sector : ""}
+                    onChange={(e) => {
+                        setSector(e.target.value);
+                        setCustomSector("");
+                        fetchSectorData(e.target.value);
+                    }}
                     style={{
                         padding: "10px",
                         borderRadius: "6px",
@@ -94,15 +113,46 @@ export default function SectorAnalysis() {
                         background: "#1e293b",
                         color: "white",
                         fontSize: "16px",
-                        minWidth: "200px"
+                        minWidth: "150px"
                     }}
                 >
+                    <option value="" disabled>Select a Sector</option>
                     {SECTORS.map((s) => (
                         <option key={s} value={s}>{s}</option>
                     ))}
                 </select>
-                <button onClick={() => fetchSectorData(sector)} style={{ background: "#22c55e" }}>
-                    Refresh
+
+                <span>OR</span>
+
+                <input
+                    type="text"
+                    placeholder="Search Custom Sector..."
+                    value={customSector}
+                    onChange={(e) => setCustomSector(e.target.value)}
+                    style={{
+                        padding: "10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: "#1e293b",
+                        color: "white",
+                        fontSize: "16px",
+                        minWidth: "150px"
+                    }}
+                />
+
+                <button onClick={() => {
+                    if (customSector) {
+                        if (customSector.trim() === "") {
+                            setError("Please enter a sector name");
+                            return;
+                        }
+                        setSector(customSector);
+                        fetchSectorData(customSector);
+                    } else {
+                        fetchSectorData(sector);
+                    }
+                }} style={{ background: "#22c55e" }}>
+                    Search
                 </button>
             </div>
 
@@ -182,7 +232,11 @@ export default function SectorAnalysis() {
                             </thead>
                             <tbody>
                                 {sortedData.map((stock) => (
-                                    <tr key={stock.symbol}>
+                                    <tr
+                                        key={stock.symbol}
+                                        onClick={() => navigate(`/screener?query=${stock.symbol}`)}
+                                        style={{ cursor: "pointer" }}
+                                    >
                                         <td><b>{stock.symbol}</b></td>
                                         <td>{stock.name}</td>
                                         <td>${stock.price?.toFixed(2)}</td>

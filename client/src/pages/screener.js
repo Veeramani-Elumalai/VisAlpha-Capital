@@ -1,22 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getScreenerData } from "../services/screenerService";
 import FinancialTable from "../components/screener/FinancialTable";
 import CagrSection from "../components/screener/CagrSection";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Screener() {
   const [symbol, setSymbol] = useState("");
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   //  Financial tables state
   const [quarterly, setQuarterly] = useState([]);
   const [annual, setAnnual] = useState([]);
 
+  // Auto-search if query param exists
+  useEffect(() => {
+    const query = searchParams.get("query");
+    if (query) {
+      setSymbol(query);
+      handleSearch(query);
+    }
+  }, [searchParams]);
+
   //  Search stock
-  const search = async () => {
+  const handleSearch = async (stockSymbol) => {
+    if (!stockSymbol) return;
     try {
       setError("");
-      const res = await getScreenerData(symbol);
+      const res = await getScreenerData(stockSymbol);
 
       setData(res);
       setQuarterly(res.quarterly || []);
@@ -28,6 +41,8 @@ export default function Screener() {
       setAnnual([]);
     }
   };
+
+  const search = () => handleSearch(symbol);
 
   return (
     <div className="dashboard">
@@ -57,7 +72,16 @@ export default function Screener() {
           <div className="summary">
             <div>
               <h4>Sector</h4>
-              <p>{data.sector || "-"}</p>
+              <p
+                onClick={() => data.sector && navigate(`/sector-analysis?sector=${data.sector}`)}
+                style={{
+                  cursor: data.sector ? "pointer" : "default",
+                  color: data.sector ? "#3b82f6" : "inherit",
+                  textDecoration: data.sector ? "underline" : "none"
+                }}
+              >
+                {data.sector || "-"}
+              </p>
             </div>
 
             <div>
