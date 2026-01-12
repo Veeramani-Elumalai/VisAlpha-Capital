@@ -4,7 +4,19 @@ import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-const SECTORS = ["Technology", "Finance", "Healthcare", "Consumer", "Energy", "Industrial"];
+const SECTORS = [
+    "Technology",
+    "Finance",
+    "Healthcare",
+    "Consumer",
+    "Energy",
+    "Industrial",
+    "Communication",
+    "Utilities",
+    "Materials",
+    "Real Estate",
+    "Consumer Defensive"
+];
 
 export default function SectorAnalysis() {
     const [sector, setSector] = useState("Technology");
@@ -17,6 +29,12 @@ export default function SectorAnalysis() {
 
     // Sorting State
     const [sortConfig, setSortConfig] = useState({ key: "marketCap", direction: "desc" });
+
+    // Industry State
+    const [expandedIndustries, setExpandedIndustries] = useState(new Set());
+    const [industrySortConfig, setIndustrySortConfig] = useState({ key: "totalMarketCap", direction: "desc" });
+    const [sortedIndustries, setSortedIndustries] = useState([]);
+
     const navigate = useNavigate();
 
     const fetchSectorData = useCallback(async (sectorName) => {
@@ -67,6 +85,20 @@ export default function SectorAnalysis() {
         }
     }, [data, sortConfig, sortArray]);
 
+    // Sort industries whenever data or industrySortConfig changes
+    useEffect(() => {
+        if (data && data.industries) {
+            const sorted = [...data.industries].sort((a, b) => {
+                const key = industrySortConfig.key;
+                const direction = industrySortConfig.direction;
+                if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
+                if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
+                return 0;
+            });
+            setSortedIndustries(sorted);
+        }
+    }, [data, industrySortConfig]);
+
     const handleSort = (key) => {
         let direction = "desc";
         if (sortConfig.key === key && sortConfig.direction === "desc") {
@@ -81,6 +113,31 @@ export default function SectorAnalysis() {
     const getSortIcon = (key) => {
         if (sortConfig.key !== key) return "↕️";
         return sortConfig.direction === "asc" ? "🔼" : "🔽";
+    };
+
+    const handleIndustrySort = (key) => {
+        let direction = "desc";
+        if (industrySortConfig.key === key && industrySortConfig.direction === "desc") {
+            direction = "asc";
+        }
+        setIndustrySortConfig({ key, direction });
+    };
+
+    const getIndustrySortIcon = (key) => {
+        if (industrySortConfig.key !== key) return "↕️";
+        return industrySortConfig.direction === "asc" ? "🔼" : "🔽";
+    };
+
+    const toggleIndustry = (industryName) => {
+        setExpandedIndustries(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(industryName)) {
+                newSet.delete(industryName);
+            } else {
+                newSet.add(industryName);
+            }
+            return newSet;
+        });
     };
 
     if (!data && loading) return <div className="center"><h2>Loading Market Data...</h2></div>;
@@ -163,6 +220,10 @@ export default function SectorAnalysis() {
                     {/* ---------- Stats Cards ---------- */}
                     <div className="summary">
                         <div>
+                            <h4>Total Stocks</h4>
+                            <p>{data.stocks?.length || 0}</p>
+                        </div>
+                        <div>
                             <h4>Avg PE Ratio</h4>
                             <p>{stats.avgPe}</p>
                         </div>
@@ -180,12 +241,12 @@ export default function SectorAnalysis() {
                     <div className="charts-row">
                         {/* Market Cap Distribution */}
                         <div className="chart small">
-                            <h3>Market Cap Distribution (Billions)</h3>
+                            <h3>Top 10 Market Cap Distribution (Billions)</h3>
                             <Pie
                                 data={{
-                                    labels: sortedData.map(s => s.symbol),
+                                    labels: [...sortedData].sort((a, b) => b.marketCap - a.marketCap).slice(0, 10).map(s => s.symbol),
                                     datasets: [{
-                                        data: sortedData.map(s => s.marketCap / 1e9),
+                                        data: [...sortedData].sort((a, b) => b.marketCap - a.marketCap).slice(0, 10).map(s => s.marketCap / 1e9),
                                         backgroundColor: ["#3b82f6", "#22c55e", "#eab308", "#ef4444", "#a855f7", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#ec4899"]
                                     }]
                                 }}
@@ -194,19 +255,118 @@ export default function SectorAnalysis() {
 
                         {/* PE Comparison */}
                         <div className="chart small" style={{ width: "58%" }}>
-                            <h3>P/E Ratio Comparison</h3>
+                            <h3>Top 10 P/E Ratio Comparison</h3>
                             <Bar
                                 data={{
-                                    labels: sortedData.map(s => s.symbol),
+                                    labels: [...sortedData].sort((a, b) => b.marketCap - a.marketCap).slice(0, 10).map(s => s.symbol),
                                     datasets: [{
                                         label: "P/E Ratio",
-                                        data: sortedData.map(s => s.peRatio),
+                                        data: [...sortedData].sort((a, b) => b.marketCap - a.marketCap).slice(0, 10).map(s => s.peRatio),
                                         backgroundColor: "#3b82f6"
                                     }]
                                 }}
                             />
                         </div>
                     </div>
+
+                    {/* ---------- Industry Overview ---------- */}
+                    {data.industries && data.industries.length > 0 && (
+                        <div className="table-container" style={{ marginTop: "30px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                                <h3>📊 Industry Breakdown</h3>
+                                <span style={{ fontSize: "12px", color: "gray" }}>Click industry to expand stocks • Click headers to sort</span>
+                            </div>
+
+                            <table>
+                                <thead>
+                                    <tr style={{ cursor: "pointer" }}>
+                                        <th style={{ width: "40px" }}></th>
+                                        <th onClick={() => handleIndustrySort("name")}>Industry {getIndustrySortIcon("name")}</th>
+                                        <th onClick={() => handleIndustrySort("stockCount")}>Stocks {getIndustrySortIcon("stockCount")}</th>
+                                        <th onClick={() => handleIndustrySort("avgPe")}>Avg P/E {getIndustrySortIcon("avgPe")}</th>
+                                        <th onClick={() => handleIndustrySort("totalMarketCap")}>Total M.Cap {getIndustrySortIcon("totalMarketCap")}</th>
+                                        <th onClick={() => handleIndustrySort("avgBeta")}>Avg Beta {getIndustrySortIcon("avgBeta")}</th>
+                                        <th onClick={() => handleIndustrySort("avgDividendYield")}>Avg Div Yield {getIndustrySortIcon("avgDividendYield")}</th>
+                                        <th onClick={() => handleIndustrySort("topStockChange")}>Top Performer {getIndustrySortIcon("topStockChange")}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sortedIndustries.map((industry) => (
+                                        <>
+                                            <tr
+                                                key={industry.name}
+                                                onClick={() => toggleIndustry(industry.name)}
+                                                style={{
+                                                    cursor: "pointer",
+                                                    background: expandedIndustries.has(industry.name) ? "#1e293b" : "transparent",
+                                                    borderLeft: expandedIndustries.has(industry.name) ? "3px solid #3b82f6" : "none"
+                                                }}
+                                            >
+                                                <td style={{ textAlign: "center" }}>
+                                                    {expandedIndustries.has(industry.name) ? "🔽" : "▶️"}
+                                                </td>
+                                                <td><b>{industry.name}</b></td>
+                                                <td>{industry.stockCount}</td>
+                                                <td>{industry.avgPe?.toFixed(2)}</td>
+                                                <td>${(industry.totalMarketCap / 1e9).toFixed(2)}B</td>
+                                                <td>{industry.avgBeta?.toFixed(2)}</td>
+                                                <td>{industry.avgDividendYield?.toFixed(2)}%</td>
+                                                <td style={{ color: industry.topStockChange >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+                                                    {industry.topStock} ({industry.topStockChange > 0 ? "+" : ""}{industry.topStockChange}%)
+                                                </td>
+                                            </tr>
+                                            {expandedIndustries.has(industry.name) && (
+                                                <tr key={`${industry.name}-expanded`}>
+                                                    <td colSpan="8" style={{ padding: "0", background: "#0f172a" }}>
+                                                        <div style={{ padding: "20px", borderLeft: "3px solid #3b82f6" }}>
+                                                            <h4 style={{ marginTop: 0, color: "#3b82f6" }}>Stocks in {industry.name}</h4>
+                                                            <table style={{ width: "100%", marginTop: "10px" }}>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Symbol</th>
+                                                                        <th>Name</th>
+                                                                        <th>Price</th>
+                                                                        <th>M. Cap</th>
+                                                                        <th>P/E</th>
+                                                                        <th>Beta</th>
+                                                                        <th>Div Yield</th>
+                                                                        <th>1D Change</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {industry.stocks.map((stock) => (
+                                                                        <tr
+                                                                            key={stock.symbol}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                navigate(`/screener?query=${stock.symbol}`);
+                                                                            }}
+                                                                            style={{ cursor: "pointer", background: "#1e293b" }}
+                                                                        >
+                                                                            <td><b>{stock.symbol}</b></td>
+                                                                            <td>{stock.name}</td>
+                                                                            <td>${stock.price?.toFixed(2)}</td>
+                                                                            <td>${(stock.marketCap / 1e9).toFixed(2)}B</td>
+                                                                            <td>{stock.peRatio?.toFixed(2)}</td>
+                                                                            <td>{stock.beta?.toFixed(2)}</td>
+                                                                            <td>{stock.dividendYield?.toFixed(2)}%</td>
+                                                                            <td style={{ color: stock.change >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+                                                                                {stock.change > 0 ? "+" : ""}{stock.change} ({stock.changePercent}%)
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {/* ---------- Data Table ---------- */}
                     <div className="table-container">
