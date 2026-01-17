@@ -12,7 +12,9 @@ router.get("/:symbol", auth, async (req, res) => {
       `http://127.0.0.1:8000/screener/${symbol}`
     );
 
-    if (data.error) {
+    const hasData = data.sector || (data.quarterly && data.quarterly.length > 0) || (data.annual && data.annual.length > 0);
+
+    if (data.error || (data.quoteSummary && data.quoteSummary.error) || !hasData) {
       return res.status(400).json({ msg: "Invalid symbol" });
     }
 
@@ -27,7 +29,13 @@ router.get("/screener/:symbol", async (req, res) => {
     const response = await axios.get(
       `http://localhost:8000/screener/${req.params.symbol}`
     );
-    res.json(response.data);
+    const { data } = response;
+    const hasData = data.sector || (data.quarterly && data.quarterly.length > 0) || (data.annual && data.annual.length > 0);
+
+    if (data.error || (data.quoteSummary && data.quoteSummary.error) || !hasData) {
+      return res.status(400).json({ msg: "Invalid symbol" });
+    }
+    res.json(data);
   } catch (err) {
     res.status(400).json({ msg: "Invalid symbol" });
   }

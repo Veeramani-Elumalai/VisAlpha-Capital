@@ -8,7 +8,13 @@ export default function CagrSection({ symbol }) {
 
   useEffect(() => {
     if (!symbol) return;
-    fetchCagr(symbol, frequency).then(setData);
+    setData(null); // Clear previous growth data while loading new
+    fetchCagr(symbol, frequency)
+      .then(setData)
+      .catch((err) => {
+        console.error("CAGR fetch failed:", err);
+        setData(null);
+      });
   }, [symbol, frequency]);
 
   if (!data) return null;

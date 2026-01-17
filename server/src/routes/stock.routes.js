@@ -20,8 +20,21 @@ router.get("/cagr/:symbol", async (req, res) => {
     console.log("➡️ Calling Python URL:", url);
 
     const response = await axios.get(url);
+    const { data } = response;
 
-    res.json(response.data);
+    // Detect empty or missing growth data
+    const hasGrowthData = (data.revenueSeries && data.revenueSeries.length > 0) ||
+      (data.profitSeries && data.profitSeries.length > 0);
+
+    // Detect nested errors from FastAPI/yfinance
+    if (data.error || (data.quoteSummary && data.quoteSummary.error) || !hasGrowthData) {
+      return res.status(400).json({
+        error: "Invalid symbol",
+        reason: data.quoteSummary?.error?.description || "Growth data not found",
+      });
+    }
+
+    res.json(data);
   } catch (err) {
     console.error("❌ CAGR ROUTE FAILED");
     console.error("Message:", err.message);

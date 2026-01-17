@@ -8,6 +8,7 @@ export default function Screener() {
   const [symbol, setSymbol] = useState("");
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -28,17 +29,34 @@ export default function Screener() {
   const handleSearch = async (stockSymbol) => {
     if (!stockSymbol) return;
     try {
+      setLoading(true);
       setError("");
+      setData(null); // Clear previous data
+      setQuarterly([]);
+      setAnnual([]);
+
       const res = await getScreenerData(stockSymbol);
+
+      // Explicit validation: Ensure we got meaningful data back.
+      // A valid stock must have either a sector assigned or historical quarterly data.
+      // If only a 'symbol' exists with no other info, it's likely an invalid ticker.
+      const hasMeaningfulData = res && (res.sector || (res.quarterly && res.quarterly.length > 0));
+
+      if (!hasMeaningfulData) {
+        throw new Error("No data found for this symbol");
+      }
 
       setData(res);
       setQuarterly(res.quarterly || []);
       setAnnual(res.annual || []);
     } catch (err) {
-      setError("Invalid stock symbol");
+      console.error("Search error:", err);
+      setError(err.response?.data?.msg || err.message || "Invalid stock symbol");
       setData(null);
       setQuarterly([]);
       setAnnual([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,15 +77,32 @@ export default function Screener() {
           placeholder="Search symbol (AAPL, MSFT)"
           value={symbol}
           onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+          disabled={loading}
+          onKeyPress={(e) => e.key === "Enter" && search()}
         />
-        <button onClick={search}>Search</button>
+        <button onClick={search} disabled={loading || !symbol}>
+          {loading ? "Searching..." : "Search"}
+        </button>
       </div>
 
       {/*  Error */}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && (
+        <div className="error-message">
+          <span>❌</span>
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Searching for {symbol}...</p>
+        </div>
+      )}
 
       {/*  Stock Summary */}
-      {data && (
+      {!loading && data && (
         <>
           <div className="summary">
             <div>
@@ -112,7 +147,7 @@ export default function Screener() {
             data={annual}
           />
           {/* 📆 Annual Table */}
-          <CagrSection symbol={symbol} />
+          <CagrSection symbol={data.symbol || symbol} />
         </>
       )}
     </div>
