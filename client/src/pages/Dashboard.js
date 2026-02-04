@@ -7,10 +7,21 @@ import { Line } from "react-chartjs-2";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [portfolio, setPortfolio] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [perf, setPerf] = useState([]);
-  const [bench, setBench] = useState([]);
+  const [portfolio, setPortfolio] = useState(() => {
+    const cached = localStorage.getItem("portfolioCache");
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !localStorage.getItem("portfolioCache");
+  });
+  const [perf, setPerf] = useState(() => {
+    const cached = localStorage.getItem("perfCache");
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [bench, setBench] = useState(() => {
+    const cached = localStorage.getItem("benchCache");
+    return cached ? JSON.parse(cached) : [];
+  });
   const [range, setRange] = useState(30);
 
 
@@ -22,6 +33,9 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("portfolioCache");
+    localStorage.removeItem("perfCache");
+    localStorage.removeItem("benchCache");
     window.location.href = "/";
   };
 
@@ -36,7 +50,9 @@ export default function Dashboard() {
           },
         });
 
-        setPortfolio(res.data.stocks || []);
+        const stocks = res.data.stocks || [];
+        setPortfolio(stocks);
+        localStorage.setItem("portfolioCache", JSON.stringify(stocks));
       } catch (err) {
         alert("Session expired. Login again.");
         handleLogout();
@@ -62,6 +78,8 @@ export default function Dashboard() {
 
         setPerf(res.data.portfolio);
         setBench(res.data.benchmark);
+        localStorage.setItem("perfCache", JSON.stringify(res.data.portfolio));
+        localStorage.setItem("benchCache", JSON.stringify(res.data.benchmark));
       } catch (e) {
         console.log("Performance fetch failed", e.message);
       }
@@ -442,7 +460,7 @@ export default function Dashboard() {
             <tbody>
               {portfolio.map((stock, i) => (
                 <tr key={i}>
-                  <td 
+                  <td
                     onClick={() => navigate(`/screener?query=${stock.symbol}`)}
                     style={{ cursor: "pointer" }}
                   >
