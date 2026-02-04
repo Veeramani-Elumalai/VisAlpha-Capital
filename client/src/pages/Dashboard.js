@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import { Line } from "react-chartjs-2";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
   const [perf, setPerf] = useState([]);
@@ -440,7 +442,12 @@ export default function Dashboard() {
             <tbody>
               {portfolio.map((stock, i) => (
                 <tr key={i}>
-                  <td>{stock.symbol}</td>
+                  <td 
+                    onClick={() => navigate(`/screener?query=${stock.symbol}`)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {stock.symbol}
+                  </td>
                   <td>{stock.quantity}</td>
                   <td>${stock.buyPrice}</td>
                   <td>${stock.currentPrice?.toFixed(2)}</td>
