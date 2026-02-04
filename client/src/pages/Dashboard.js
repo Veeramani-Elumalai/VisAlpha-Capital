@@ -256,6 +256,13 @@ export default function Dashboard() {
                 ]
               }}
               options={{
+                onClick: (evt, elements) => {
+                  if (elements && elements.length > 0) {
+                    const index = elements[0].index;
+                    const stock = portfolio[index];
+                    navigate(`/screener?query=${stock.symbol}`);
+                  }
+                },
                 plugins: {
                   tooltip: {
                     enabled: false,
@@ -311,6 +318,7 @@ export default function Dashboard() {
                 }
               }}
               plugins={[customTooltip]}
+              style={{ cursor: "pointer" }}
             />
 
           </div>
@@ -345,6 +353,14 @@ export default function Dashboard() {
               }}
 
               options={{
+                onClick: (evt, elements) => {
+                  if (elements && elements.length > 0) {
+                    const index = elements[0].index;
+                    const labels = [...new Set(portfolio.map(s => s.sector))];
+                    const sector = labels[index];
+                    navigate(`/sector-analysis?sector=${sector}`);
+                  }
+                },
                 plugins: {
                   tooltip: {
                     enabled: false,
@@ -410,6 +426,7 @@ export default function Dashboard() {
                   }
                 }
               }}
+              style={{ cursor: "pointer" }}
             />
 
           </div>
