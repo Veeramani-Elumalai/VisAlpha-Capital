@@ -5,22 +5,21 @@ import "chart.js/auto";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const SECTORS = [
-    "Technology",
-    "Finance",
-    "Healthcare",
-    "Consumer",
+    "Basic Materials",
+    "Communication Services",
+    "Consumer Cyclical",
+    "Consumer Defensive",
     "Energy",
-    "Industrial",
-    "Communication",
-    "Utilities",
-    "Materials",
+    "Financial Services",
+    "Healthcare",
+    "Industrials",
     "Real Estate",
-    "Consumer Defensive"
+    "Technology",
+    "Utilities"
 ];
 
 export default function SectorAnalysis() {
     const [sector, setSector] = useState("Technology");
-    const [customSector, setCustomSector] = useState("");
     const [data, setData] = useState(null);
     const [sortedData, setSortedData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -160,7 +159,6 @@ export default function SectorAnalysis() {
                     value={SECTORS.includes(sector) ? sector : ""}
                     onChange={(e) => {
                         setSector(e.target.value);
-                        setCustomSector("");
                         fetchSectorData(e.target.value);
                     }}
                     style={{
@@ -178,39 +176,6 @@ export default function SectorAnalysis() {
                         <option key={s} value={s}>{s}</option>
                     ))}
                 </select>
-
-                <span>OR</span>
-
-                <input
-                    type="text"
-                    placeholder="Search Custom Sector..."
-                    value={customSector}
-                    onChange={(e) => setCustomSector(e.target.value)}
-                    style={{
-                        padding: "10px",
-                        borderRadius: "6px",
-                        border: "none",
-                        background: "#1e293b",
-                        color: "white",
-                        fontSize: "16px",
-                        minWidth: "150px"
-                    }}
-                />
-
-                <button onClick={() => {
-                    if (customSector) {
-                        if (customSector.trim() === "") {
-                            setError("Please enter a sector name");
-                            return;
-                        }
-                        setSector(customSector);
-                        fetchSectorData(customSector);
-                    } else {
-                        fetchSectorData(sector);
-                    }
-                }} style={{ background: "#22c55e" }}>
-                    Search
-                </button>
             </div>
 
             {error && <p style={{ color: "red", marginTop: "20px" }}>{error}</p>}
