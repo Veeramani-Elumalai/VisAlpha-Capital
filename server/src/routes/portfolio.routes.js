@@ -186,9 +186,10 @@ router.get("/performance", auth, async (req, res) => {
     }));
 
 
-    // Benchmark S&P 500
+    // Benchmark
+    const index = req.query.benchmark || "^GSPC";
     const benchRes = await axios.get(
-      `http://127.0.0.1:8000/history/^GSPC?days=${days}`
+      `http://127.0.0.1:8000/history/${index}?days=${days}`
     );
 
     const benchRaw = benchRes.data.history;

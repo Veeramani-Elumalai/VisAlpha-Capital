@@ -23,6 +23,14 @@ export default function Dashboard() {
     return cached ? JSON.parse(cached) : [];
   });
   const [range, setRange] = useState(30);
+  const [benchmark, setBenchmark] = useState("^GSPC");
+
+  const indices = [
+    { name: "S&P 500", symbol: "^GSPC" },
+    { name: "NASDAQ", symbol: "^IXIC" },
+    { name: "Dow Jones", symbol: "^DJI" },
+    { name: "Russell 2000", symbol: "^RUT" },
+  ];
 
 
   // Add Stock Input States
@@ -68,7 +76,7 @@ export default function Dashboard() {
     const loadPerf = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/portfolio/performance?days=${range}`,
+          `http://localhost:5000/api/portfolio/performance?days=${range}&benchmark=${benchmark}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -86,7 +94,7 @@ export default function Dashboard() {
     };
 
     loadPerf();
-  }, [range]);
+  }, [range, benchmark]);
 
 
   // ---------------- ADD STOCK FUNCTION ----------------
@@ -508,8 +516,26 @@ export default function Dashboard() {
         <div className="chart">
 
           {/* HEADER + RANGE BUTTONS */}
-          <div style={{ display: "flex", justifyContent: "space-between", color: "white" }}>
-            <h3>Portfolio vs S&P 500</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", color: "white", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <h3>Portfolio vs</h3>
+              <select
+                value={benchmark}
+                onChange={(e) => setBenchmark(e.target.value)}
+                style={{
+                  background: "#1e293b",
+                  color: "white",
+                  border: "1px solid #475569",
+                  padding: "5px",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                {indices.map(idx => (
+                  <option key={idx.symbol} value={idx.symbol}>{idx.name}</option>
+                ))}
+              </select>
+            </div>
 
             <div>
               <button onClick={() => setRange(7)}>7D</button>
@@ -532,7 +558,7 @@ export default function Dashboard() {
                   tension: 0.4,
                 },
                 {
-                  label: "S&P 500 (%)",
+                  label: `${indices.find(i => i.symbol === benchmark)?.name} (%)`,
                   data: bench.map(b => b.value),
                   borderColor: "#3b82f6",
                   tension: 0.4,
@@ -551,9 +577,9 @@ export default function Dashboard() {
             </p>
 
             <p>
-              S&P 500 Return:
-              <b style={{ color: bench.at(-1).value >= 100 ? "limegreen" : "red" }}>
-                {(bench.at(-1).value - 100).toFixed(2)}%
+              {indices.find(i => i.symbol === benchmark)?.name} Return:
+              <b style={{ color: bench.at(-1)?.value >= 100 ? "limegreen" : "red" }}>
+                {(bench.at(-1)?.value - 100).toFixed(2)}%
               </b>
             </p>
 
