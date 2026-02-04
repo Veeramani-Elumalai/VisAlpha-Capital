@@ -96,6 +96,17 @@ export default function Dashboard() {
     loadPerf();
   }, [range, benchmark]);
 
+  // Handle tooltip cleanup on unmount
+  useEffect(() => {
+    return () => {
+      const tooltips = ["chartjs-tooltip", "sector-tooltip"];
+      tooltips.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      });
+    };
+  }, []);
+
 
   // ---------------- ADD STOCK FUNCTION ----------------
   const addStock = async (e) => {
@@ -260,6 +271,8 @@ export default function Dashboard() {
                   if (elements && elements.length > 0) {
                     const index = elements[0].index;
                     const stock = portfolio[index];
+                    const tooltipEl = document.getElementById("chartjs-tooltip");
+                    if (tooltipEl) tooltipEl.style.opacity = 0;
                     navigate(`/screener?query=${stock.symbol}`);
                   }
                 },
@@ -358,6 +371,8 @@ export default function Dashboard() {
                     const index = elements[0].index;
                     const labels = [...new Set(portfolio.map(s => s.sector))];
                     const sector = labels[index];
+                    const tooltipEl = document.getElementById("sector-tooltip");
+                    if (tooltipEl) tooltipEl.style.opacity = 0;
                     navigate(`/sector-analysis?sector=${sector}`);
                   }
                 },
