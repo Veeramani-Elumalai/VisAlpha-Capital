@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Register from "./pages/Register";
 import Screener from "./pages/screener";
 import SectorAnalysis from "./pages/SectorAnalysis";
+import Compare from "./pages/Compare";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/screener" element={<Screener />} />
         <Route path="/sector-analysis" element={<SectorAnalysis />} />
+        <Route path="/compare" element={<Compare />} />
       </Routes>
     </BrowserRouter>
   );

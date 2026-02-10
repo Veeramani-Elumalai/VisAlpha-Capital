@@ -66,9 +66,14 @@ export default function Screener() {
     <div className="dashboard">
       <header className="top-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2 style={{ color: "white", margin: 0 }}>📊 Stock Screener</h2>
-        <a href="/dashboard" className="logout" style={{ textDecoration: "none", background: "#3b82f6" }}>
-          Back to Dashboard
-        </a>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <a href="/compare" className="logout" style={{ textDecoration: "none", background: "#f59e0b" }}>
+            ⚖️ Compare Stocks
+          </a>
+          <a href="/dashboard" className="logout" style={{ textDecoration: "none", background: "#3b82f6" }}>
+            Back to Dashboard
+          </a>
+        </div>
       </header>
 
       {/*  Search Bar */}
