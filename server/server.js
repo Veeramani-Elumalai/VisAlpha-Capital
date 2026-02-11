@@ -19,6 +19,7 @@ import portfolioRoutes from "./src/routes/portfolio.routes.js";
 import stockRoutes from "./src/routes/stock.routes.js";
 import screenerRoutes from "./src/routes/screener.routes.js";
 import sectorRoutes from "./src/routes/sector.routes.js";
+import newsRoutes from "./src/routes/news.routes.js";
 
 // Mount routes
 app.use("/api/auth", authRoutes);
@@ -26,6 +27,7 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/screener", screenerRoutes);
 app.use("/api/sector", sectorRoutes);
+app.use("/api/news", newsRoutes);
 
 // Default route
 app.get("/", (req, res) => {

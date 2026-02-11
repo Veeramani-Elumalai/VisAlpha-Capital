@@ -200,6 +200,9 @@ export default function Dashboard() {
         <a href="/screener" className="logout" style={{ background: "#a855f7", textDecoration: "none", marginLeft: "10px" }}>
           Screener
         </a>
+        <a href="/news" className="logout" style={{ background: "#ea580c", textDecoration: "none", marginLeft: "10px" }}>
+          Market News
+        </a>
       </header>
 
       {/* ---------- P/L Summary ---------- */}

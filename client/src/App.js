@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Screener from "./pages/screener";
 import SectorAnalysis from "./pages/SectorAnalysis";
 import Compare from "./pages/Compare";
+import News from "./pages/News";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/screener" element={<Screener />} />
         <Route path="/sector-analysis" element={<SectorAnalysis />} />
         <Route path="/compare" element={<Compare />} />
+        <Route path="/news" element={<News />} />
       </Routes>
     </BrowserRouter>
   );
