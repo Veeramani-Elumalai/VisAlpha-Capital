@@ -48,4 +48,26 @@ router.get("/cagr/:symbol", async (req, res) => {
   }
 });
 
+router.get("/advisor/:symbol", async (req, res) => {
+  try {
+    const symbol = req.params.symbol.trim().toUpperCase();
+    console.log("➡️ Advisor request for:", symbol);
+
+    const url = `${process.env.MARKET_SERVICE_URL}/advisor/${symbol}`;
+    const response = await axios.get(url);
+    
+    if (response.data.error) {
+      return res.status(400).json(response.data);
+    }
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ ADVISOR ROUTE FAILED", err.message);
+    res.status(500).json({
+      error: "Advisor analysis failed",
+      reason: err.message,
+    });
+  }
+});
+
 export default router;
