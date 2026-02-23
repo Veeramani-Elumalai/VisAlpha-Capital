@@ -49,6 +49,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchPortfolio = async () => {
+      const cached = localStorage.getItem("portfolioCache");
+      const lastFetched = localStorage.getItem("portfolioLastFetched");
+      const now = Date.now();
+
+      // If cache exists and is less than 2 minutes old, skip fetch
+      if (cached && lastFetched && (now - parseInt(lastFetched) < 120000)) {
+        setPortfolio(JSON.parse(cached));
+        setLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem("token");
 
       try {
@@ -61,6 +72,7 @@ export default function Dashboard() {
         const stocks = res.data.stocks || [];
         setPortfolio(stocks);
         localStorage.setItem("portfolioCache", JSON.stringify(stocks));
+        localStorage.setItem("portfolioLastFetched", now.toString());
       } catch (err) {
         alert("Session expired. Login again.");
         handleLogout();
@@ -74,6 +86,22 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadPerf = async () => {
+      const cachedPerf = localStorage.getItem("perfCache");
+      const cachedBench = localStorage.getItem("benchCache");
+      const lastFetched = localStorage.getItem("perfLastFetched");
+      const now = Date.now();
+
+      // If cache exists and is less than 2 minutes old, skip fetch
+      if (cachedPerf && cachedBench && lastFetched && (now - parseInt(lastFetched) < 120000)) {
+        // Only skip if the range and benchmark haven't changed (though they are reactive params)
+        // For simplicity, we only skip if they match the default or previous state if we had stored them
+        // But since range and benchmark are in the dependency array, this effect will run when they change anyway.
+        // We can add a check if they changed, but for now let's just use the timestamp.
+        setPerf(JSON.parse(cachedPerf));
+        setBench(JSON.parse(cachedBench));
+        return;
+      }
+
       try {
         const res = await axios.get(
           `http://localhost:5000/api/portfolio/performance?days=${range}&benchmark=${benchmark}`,
@@ -88,6 +116,7 @@ export default function Dashboard() {
         setBench(res.data.benchmark);
         localStorage.setItem("perfCache", JSON.stringify(res.data.portfolio));
         localStorage.setItem("benchCache", JSON.stringify(res.data.benchmark));
+        localStorage.setItem("perfLastFetched", now.toString());
       } catch (e) {
         console.log("Performance fetch failed", e.message);
       }

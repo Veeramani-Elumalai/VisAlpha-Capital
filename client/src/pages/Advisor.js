@@ -59,7 +59,7 @@ const Advisor = () => {
                     <input
                         type="text"
                         className="input-field"
-                        placeholder="Enter Stock Symbol (e.g., AAPL, RELIANCE.NS)"
+                        placeholder="Enter Stock Symbol (e.g., AAPL, META...)"
                         value={symbol}
                         onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                         style={{ flex: 1, padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "1rem" }}
