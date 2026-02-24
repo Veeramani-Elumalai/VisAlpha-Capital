@@ -86,17 +86,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadPerf = async () => {
-      const cachedPerf = localStorage.getItem("perfCache");
-      const cachedBench = localStorage.getItem("benchCache");
-      const lastFetched = localStorage.getItem("perfLastFetched");
+      const cacheKeyPerf = `perfCache_${range}_${benchmark}`;
+      const cacheKeyBench = `benchCache_${range}_${benchmark}`;
+      const cacheKeyTime = `perfLastFetched_${range}_${benchmark}`;
+
+      const cachedPerf = localStorage.getItem(cacheKeyPerf);
+      const cachedBench = localStorage.getItem(cacheKeyBench);
+      const lastFetched = localStorage.getItem(cacheKeyTime);
       const now = Date.now();
 
       // If cache exists and is less than 2 minutes old, skip fetch
       if (cachedPerf && cachedBench && lastFetched && (now - parseInt(lastFetched) < 120000)) {
-        // Only skip if the range and benchmark haven't changed (though they are reactive params)
-        // For simplicity, we only skip if they match the default or previous state if we had stored them
-        // But since range and benchmark are in the dependency array, this effect will run when they change anyway.
-        // We can add a check if they changed, but for now let's just use the timestamp.
         setPerf(JSON.parse(cachedPerf));
         setBench(JSON.parse(cachedBench));
         return;
@@ -112,11 +112,15 @@ export default function Dashboard() {
           }
         );
 
-        setPerf(res.data.portfolio);
-        setBench(res.data.benchmark);
-        localStorage.setItem("perfCache", JSON.stringify(res.data.portfolio));
-        localStorage.setItem("benchCache", JSON.stringify(res.data.benchmark));
-        localStorage.setItem("perfLastFetched", now.toString());
+        const pData = res.data.portfolio || [];
+        const bData = res.data.benchmark || [];
+
+        setPerf(pData);
+        setBench(bData);
+
+        localStorage.setItem(cacheKeyPerf, JSON.stringify(pData));
+        localStorage.setItem(cacheKeyBench, JSON.stringify(bData));
+        localStorage.setItem(cacheKeyTime, now.toString());
       } catch (e) {
         console.log("Performance fetch failed", e.message);
       }
@@ -638,22 +642,24 @@ export default function Dashboard() {
           <div style={{ color: "white", marginTop: "10px" }}>
             <p>
               Portfolio Return:
-              <b style={{ color: perf.at(-1).value >= 100 ? "limegreen" : "red" }}>
-                {(perf.at(-1).value - 100).toFixed(2)}%
+              <b style={{ color: perf?.at(-1)?.value >= 100 ? "limegreen" : "red" }}>
+                {perf?.length > 0 ? (perf.at(-1).value - 100).toFixed(2) : "0.00"}%
               </b>
             </p>
 
             <p>
               {indices.find(i => i.symbol === benchmark)?.name} Return:
-              <b style={{ color: bench.at(-1)?.value >= 100 ? "limegreen" : "red" }}>
-                {(bench.at(-1)?.value - 100).toFixed(2)}%
+              <b style={{ color: bench?.at(-1)?.value >= 100 ? "limegreen" : "red" }}>
+                {bench?.length > 0 ? (bench.at(-1)?.value - 100).toFixed(2) : "0.00"}%
               </b>
             </p>
 
             <p>
               Outperformance:
-              <b style={{ color: (perf.at(-1).value - bench.at(-1).value) >= 0 ? "limegreen" : "red" }}>
-                {(perf.at(-1).value - bench.at(-1).value).toFixed(2)}%
+              <b style={{ color: (perf?.at(-1)?.value - bench?.at(-1)?.value) >= 0 ? "limegreen" : "red" }}>
+                {perf?.length > 0 && bench?.length > 0
+                  ? (perf.at(-1).value - bench.at(-1).value).toFixed(2)
+                  : "0.00"}%
               </b>
             </p>
           </div>
