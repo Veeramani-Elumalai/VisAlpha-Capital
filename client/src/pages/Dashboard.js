@@ -234,7 +234,7 @@ export default function Dashboard() {
           Screener
         </a>
         <a href="/news" className="logout" style={{ background: "#ea580c", textDecoration: "none", marginLeft: "10px" }}>
-          Market News
+          News
         </a>
         <a href="/advisor" className="logout" style={{ background: "#2563eb", textDecoration: "none", marginLeft: "10px" }}>
           ✨ AI Advisor
