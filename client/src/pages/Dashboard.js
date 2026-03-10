@@ -236,6 +236,9 @@ export default function Dashboard() {
         <a href="/news" className="logout" style={{ background: "#ea580c", textDecoration: "none", marginLeft: "10px" }}>
           News
         </a>
+        <a href="/daily-report" className="logout" style={{ background: "#8b5cf6", textDecoration: "none", marginLeft: "10px" }}>
+          📅 Daily Report
+        </a>
         <a href="/advisor" className="logout" style={{ background: "#2563eb", textDecoration: "none", marginLeft: "10px" }}>
           ✨ AI Advisor
         </a>

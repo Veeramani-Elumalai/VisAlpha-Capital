@@ -1,4 +1,4 @@
-console.log("✅ MARKET_SERVICE_URL =", process.env.MARKET_SERVICE_URL);
+// console.log("✅ MARKET_SERVICE_URL =", process.env.MARKET_SERVICE_URL);
 
 import express from "express";
 import axios from "axios";
@@ -55,7 +55,7 @@ router.get("/advisor/:symbol", async (req, res) => {
 
     const url = `${process.env.MARKET_SERVICE_URL}/advisor/${symbol}`;
     const response = await axios.get(url);
-    
+
     if (response.data.error) {
       return res.status(400).json(response.data);
     }

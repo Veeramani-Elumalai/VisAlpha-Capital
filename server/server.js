@@ -20,6 +20,8 @@ import stockRoutes from "./src/routes/stock.routes.js";
 import screenerRoutes from "./src/routes/screener.routes.js";
 import sectorRoutes from "./src/routes/sector.routes.js";
 import newsRoutes from "./src/routes/news.routes.js";
+import dailyReportRoutes from "./src/routes/dailyReport.routes.js";
+import { startDailyReportScheduler } from "./src/services/dailyReport.scheduler.js";
 
 // Mount routes
 app.use("/api/auth", authRoutes);
@@ -28,6 +30,10 @@ app.use("/api/stocks", stockRoutes);
 app.use("/api/screener", screenerRoutes);
 app.use("/api/sector", sectorRoutes);
 app.use("/api/news", newsRoutes);
+app.use("/api/daily-report", dailyReportRoutes);
+
+// Start scheduler
+startDailyReportScheduler();
 
 // Default route
 app.get("/", (req, res) => {

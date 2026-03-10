@@ -2,14 +2,22 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import NewsCard from '../components/news/NewsCard';
 
-// Industry badge colour map
+// Badge colour map — shared by Stock Industry + Earnings
 const INDUSTRY_COLORS = {
+    // Stock Industry
     Technology: '#6366f1',
     Healthcare: '#10b981',
     Energy: '#f59e0b',
     Finance: '#3b82f6',
     Consumer: '#ec4899',
     Auto: '#8b5cf6',
+    // Earnings
+    'Q Results': '#f97316',
+    'Revenue & Profit': '#14b8a6',
+    Guidance: '#a855f7',
+    Dividend: '#22c55e',
+    IPO: '#ef4444',
+    'Analyst Ratings': '#0ea5e9',
 };
 
 const News = () => {
@@ -18,7 +26,7 @@ const News = () => {
     const [error, setError] = useState('');
     const [category, setCategory] = useState('All');
 
-    const categories = ['All', 'Stocks', 'Stock Industry', 'Economy', 'Global', 'Crypto'];
+    const categories = ['All', 'Stocks', 'Stock Industry', 'Earnings', 'Economy', 'Global', 'Crypto'];
 
     useEffect(() => {
         fetchNews();
@@ -31,6 +39,7 @@ const News = () => {
             // Map display label → query param
             const paramMap = {
                 'Stock Industry': 'StockIndustry',
+                'Earnings': 'Earnings',
             };
             const queryParam = paramMap[category] || category;
             const response = await axios.get(`/api/news?category=${queryParam}`);
@@ -44,6 +53,8 @@ const News = () => {
     };
 
     const isIndustryView = category === 'Stock Industry';
+    const isEarningsView = category === 'Earnings';
+    const useBadgeCard = isIndustryView || isEarningsView;
 
     return (
         <div style={styles.container}>
@@ -69,7 +80,14 @@ const News = () => {
                 {/* Sub-heading for Stock Industry */}
                 {isIndustryView && !loading && !error && (
                     <p style={styles.subHeading}>
-                        Top&nbsp;10 headlines across Technology, Healthcare, Energy, Finance, Consumer &amp; Auto sectors
+                        Top&nbsp;20 headlines across Technology, Healthcare, Energy, Finance, Consumer &amp; Auto sectors
+                    </p>
+                )}
+
+                {/* Sub-heading for Earnings */}
+                {isEarningsView && !loading && !error && (
+                    <p style={styles.subHeading}>
+                        Top&nbsp;20 earnings headlines — Q Results, Revenue &amp; Profit, Guidance, Dividend, IPO &amp; Analyst Ratings
                     </p>
                 )}
             </div>
@@ -84,7 +102,7 @@ const News = () => {
             ) : (
                 <div style={styles.grid}>
                     {news.map((item, index) => (
-                        isIndustryView
+                        useBadgeCard
                             ? <IndustryNewsCard key={index} article={item} />
                             : <NewsCard key={index} article={item} />
                     ))}

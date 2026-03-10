@@ -57,6 +57,52 @@ export const getNews = async (req, res) => {
             return res.json(combined);
         }
 
+        // ── Earnings: fetch top headlines across earnings sub-topics ──
+        if (category === 'Earnings') {
+            const earningsBuckets = [
+                { label: 'Q Results', q: 'quarterly earnings results' },
+                { label: 'Revenue & Profit', q: 'revenue profit beat miss' },
+                { label: 'Guidance', q: 'earnings guidance outlook forecast' },
+                { label: 'Dividend', q: 'dividend payout earnings' },
+                { label: 'IPO', q: 'IPO listing earnings' },
+                { label: 'Analyst Ratings', q: 'analyst rating upgrade downgrade earnings' },
+            ];
+
+            const earningsRequests = earningsBuckets.map(bucket =>
+                axios.get(
+                    `https://newsapi.org/v2/everything?q=${encodeURIComponent(bucket.q)}&language=en&sortBy=publishedAt&pageSize=4&apiKey=${apiKey}`
+                ).then(r => ({
+                    label: bucket.label,
+                    articles: r.data.articles || []
+                })).catch(() => ({ label: bucket.label, articles: [] }))
+            );
+
+            const earningsResults = await Promise.all(earningsRequests);
+
+            const seenEarnings = new Set();
+            const earningsCombined = [];
+
+            for (const { label, articles } of earningsResults) {
+                for (const article of articles) {
+                    if (!article.title || seenEarnings.has(article.title)) continue;
+                    seenEarnings.add(article.title);
+                    earningsCombined.push({
+                        title: article.title,
+                        description: article.description,
+                        url: article.url,
+                        imageUrl: article.urlToImage,
+                        source: article.source?.name || 'Unknown',
+                        publishedAt: article.publishedAt,
+                        industry: label,
+                    });
+                    if (earningsCombined.length === 20) break;
+                }
+                if (earningsCombined.length === 20) break;
+            }
+
+            return res.json(earningsCombined);
+        }
+
         // ── Standard categories ──
         let url = `https://newsapi.org/v2/top-headlines?country=in&category=business&apiKey=${apiKey}`;
 

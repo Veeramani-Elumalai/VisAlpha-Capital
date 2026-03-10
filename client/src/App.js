@@ -8,6 +8,7 @@ import SectorAnalysis from "./pages/SectorAnalysis";
 import Compare from "./pages/Compare";
 import News from "./pages/News";
 import Advisor from "./pages/Advisor";
+import DailyReport from "./pages/DailyReport";
 
 function App() {
   return (
@@ -29,6 +30,14 @@ function App() {
         <Route path="/sector-analysis" element={<SectorAnalysis />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/news" element={<News />} />
+        <Route
+          path="/daily-report"
+          element={
+            <ProtectedRoute>
+              <DailyReport />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/advisor"
           element={
