@@ -280,6 +280,101 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ---------- ADD STOCK FORM ---------- */}
+
+      <form className="add-box" onSubmit={addStock}>
+        <input
+          type="text"
+          placeholder="Symbol e.g AAPL"
+          value={symbol}
+          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Quantity"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Buy Price"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
+
+        <button type="submit" disabled={adding}>
+          {adding ? "Adding..." : "Add Stock"}
+        </button>
+      </form>
+
+      {/* ---------- PORTFOLIO TABLE ---------- */}
+      {portfolio.length === 0 ? (
+        <p className="empty">No stocks added yet.</p>
+      ) : (
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Stock</th>
+                <th>Qty</th>
+                <th>Buy Price</th>
+                <th>Current Price</th>
+                <th>P/L (%)</th>
+                <th>Daily Change</th>
+                <th>Remove</th>
+              </tr>
+            </thead>
+            <tbody>
+              {portfolio.map((stock, i) => (
+                <tr key={i}>
+                  <td
+                    onClick={() => navigate(`/screener?query=${stock.symbol}`)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {stock.symbol}
+                  </td>
+                  <td>{stock.quantity}</td>
+                  <td>${stock.buyPrice}</td>
+                  <td>${stock.currentPrice?.toFixed(2)}</td>
+                  <td
+                    style={{
+                      color: stock.profitLoss >= 0 ? "limegreen" : "red",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {stock.profitLossPercent}%
+                  </td>
+                  <td
+                    style={{
+                      color:
+                        stock.dayChangePercent >= 0 ? "limegreen" : "red",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    {stock.dayChangePercent > 0 ? "+" : ""}
+                    {stock.dayChangePercent}%
+                  </td>
+
+                  <td>
+                    <button
+                      onClick={() => removeStock(stock.symbol)}
+                      className="remove"
+                    >
+                      ❌
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* ---------- Pie Wrapper ---------- */}
 
       <div className="charts-row">
@@ -489,101 +584,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
-
-      {/* ---------- ADD STOCK FORM ---------- */}
-      <form className="add-box" onSubmit={addStock}>
-        <input
-          type="text"
-          placeholder="Symbol e.g AAPL"
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-          required
-        />
-
-        <input
-          type="number"
-          placeholder="Quantity"
-          value={qty}
-          onChange={(e) => setQty(e.target.value)}
-          required
-        />
-
-        <input
-          type="number"
-          placeholder="Buy Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          required
-        />
-
-        <button type="submit" disabled={adding}>
-          {adding ? "Adding..." : "Add Stock"}
-        </button>
-      </form>
-
-      {/* ---------- PORTFOLIO TABLE ---------- */}
-      {portfolio.length === 0 ? (
-        <p className="empty">No stocks added yet.</p>
-      ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Stock</th>
-                <th>Qty</th>
-                <th>Buy Price</th>
-                <th>Current Price</th>
-                <th>P/L (%)</th>
-                <th>Daily Change</th>
-                <th>Remove</th>
-              </tr>
-            </thead>
-            <tbody>
-              {portfolio.map((stock, i) => (
-                <tr key={i}>
-                  <td
-                    onClick={() => navigate(`/screener?query=${stock.symbol}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {stock.symbol}
-                  </td>
-                  <td>{stock.quantity}</td>
-                  <td>${stock.buyPrice}</td>
-                  <td>${stock.currentPrice?.toFixed(2)}</td>
-                  <td
-                    style={{
-                      color: stock.profitLoss >= 0 ? "limegreen" : "red",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {stock.profitLossPercent}%
-                  </td>
-                  <td
-                    style={{
-                      color:
-                        stock.dayChangePercent >= 0 ? "limegreen" : "red",
-                      fontWeight: "bold"
-                    }}
-                  >
-                    {stock.dayChangePercent > 0 ? "+" : ""}
-                    {stock.dayChangePercent}%
-                  </td>
-
-                  <td>
-                    <button
-                      onClick={() => removeStock(stock.symbol)}
-                      className="remove"
-                    >
-                      ❌
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {/* ---------- PERFORMANCE CHART ---------- */}
       {perf.length > 0 && (
