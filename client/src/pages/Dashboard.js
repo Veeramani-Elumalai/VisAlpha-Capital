@@ -44,7 +44,7 @@ export default function Dashboard() {
     localStorage.removeItem("portfolioCache");
     localStorage.removeItem("perfCache");
     localStorage.removeItem("benchCache");
-    window.location.href = "/";
+    window.location.href = "/login";
   };
 
   useEffect(() => {

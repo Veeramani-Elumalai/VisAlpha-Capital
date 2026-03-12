@@ -12,7 +12,7 @@ export default function Register() {
     try {
       await registerUser(name, email, password);
       setMsg("Registration Successful. Please Login.");
-      window.location.href = "/";
+      window.location.href = "/login";
     } catch (err) {
       setMsg(err.response?.data?.msg || "Registration Failed");
     }
