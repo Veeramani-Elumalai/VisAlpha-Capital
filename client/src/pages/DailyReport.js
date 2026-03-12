@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import ReportCard from '../components/daily-report/ReportCard';
 import ReasonModal from '../components/daily-report/ReasonModal';
+import DisclaimerModal from '../components/DisclaimerModal';
 
 const DailyReportPage = () => {
     const [report, setReport] = useState(null);
@@ -50,6 +51,7 @@ const DailyReportPage = () => {
 
     return (
         <div style={styles.page}>
+            <DisclaimerModal pageName="AI Daily Market Report" />
             <header style={styles.header}>
                 <div>
                     <h1 style={styles.title}>AI Daily Market Report</h1>

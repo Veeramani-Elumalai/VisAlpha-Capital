@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import api from "../services/api";
 import AdvisorCard from "../components/advisor/AdvisorCard";
+import DisclaimerModal from "../components/DisclaimerModal";
 
 const Advisor = () => {
     const [symbol, setSymbol] = useState("");
@@ -32,6 +33,7 @@ const Advisor = () => {
 
     return (
         <div className="advisor-page" style={{ padding: "2rem", maxWidth: "900px", margin: "0 auto" }}>
+            <DisclaimerModal pageName="AI Investment Advisor" />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
                 <a
                     href="/dashboard"
