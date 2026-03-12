@@ -2,14 +2,14 @@ import { useState } from "react";
 import { loginUser } from "../services/authService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { Link } from "react-router-dom";
-
-
+import { Link, useNavigate } from "react-router-dom";
+import "./Auth.css";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,100 +20,79 @@ export default function Login() {
       localStorage.setItem("token", res.token);
 
       setMsg("Login Successful");
-      window.location.href = "/dashboard";
+      setTimeout(() => navigate("/dashboard"), 500);
     } catch (err) {
       setMsg(err.response?.data?.msg || "Login failed");
     }
   };
 
   return (
-    <div style={styles.container}>
-      <form onSubmit={handleLogin} style={styles.card}>
-        <h2>VisAlpha Capital Login</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <Link to="/" className="auth-logo">VisAlpha Capital</Link>
+        <p className="auth-subtitle">Welcome back! Please login to your account.</p>
 
-        <input
-          type="email"
-          placeholder="Email"
-          style={styles.input}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <form onSubmit={handleLogin} className="auth-form">
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Email Address"
+              className="auth-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          style={styles.input}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              className="auth-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        <button style={styles.button} type="submit">
-          Login
-        </button>
+          <button className="auth-button" type="submit">
+            Login
+          </button>
+        </form>
 
-        <p style={{ marginTop: "10px" }}>
+        <div className="divider">OR</div>
+
+        <div className="google-login-container">
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              const googleToken = credentialResponse.credential;
+              
+              try {
+                const res = await axios.post("http://localhost:5000/api/auth/google", {
+                  token: googleToken
+                });
+
+                localStorage.setItem("token", res.data.token);
+                navigate("/dashboard");
+              } catch (err) {
+                setMsg("Google Login Failed");
+              }
+            }}
+            onError={() => {
+              setMsg("Google Login Failed");
+            }}
+          />
+        </div>
+
+        {msg && <div className={`auth-message ${msg.includes("Successful") ? "success" : ""}`}>{msg}</div>}
+
+        <p className="auth-link-text">
           Don't have an account?
-          <Link to="/register" style={{ color: "#2563eb", textDecoration: "none" }}>
+          <Link to="/register" className="auth-link">
             Create one
           </Link>
         </p>
-
-
-        <GoogleLogin
-          onSuccess={async (credentialResponse) => {
-            const googleToken = credentialResponse.credential;
-            
-            try {
-              const res = await axios.post("http://localhost:5000/api/auth/google", {
-                token: googleToken
-              });
-
-              localStorage.setItem("token", res.data.token);
-              window.location.href = "/dashboard";
-            } catch (err) {
-              setMsg("Google Login Failed");
-            }
-          }}
-          onError={() => {
-            setMsg("Google Login Failed");
-          }}
-        />
-
-
-        {msg && <p>{msg}</p>}
-      </form>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    height: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#0f172a"
-  },
-  card: {
-    padding: "30px",
-    borderRadius: "10px",
-    background: "white",
-    width: "350px",
-    textAlign: "center"
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    margin: "10px 0"
-  },
-  button: {
-    width: "100%",
-    padding: "10px",
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-    borderRadius: "5px"
-  }
-};

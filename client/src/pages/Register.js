@@ -1,91 +1,80 @@
 import { useState } from "react";
 import { registerUser } from "../services/authService";
+import { Link, useNavigate } from "react-router-dom";
+import "./Auth.css";
 
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
       await registerUser(name, email, password);
-      setMsg("Registration Successful. Please Login.");
-      window.location.href = "/login";
+      setMsg("Registration Successful. Redirecting to Login...");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       setMsg(err.response?.data?.msg || "Registration Failed");
     }
   };
 
   return (
-    <div style={styles.container}>
-      <form onSubmit={handleRegister} style={styles.card}>
-        <h2>Create Account</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <Link to="/" className="auth-logo">VisAlpha Capital</Link>
+        <p className="auth-subtitle">Create an account to unlock intelligent insights.</p>
 
-        <input
-          type="text"
-          placeholder="Name"
-          style={styles.input}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
+        <form onSubmit={handleRegister} className="auth-form">
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="Full Name"
+              className="auth-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          style={styles.input}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Email Address"
+              className="auth-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          style={styles.input}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              className="auth-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        <button style={styles.button} type="submit">
-          Register
-        </button>
+          <button className="auth-button" type="submit">
+            Create Account
+          </button>
+        </form>
 
-        {msg && <p>{msg}</p>}
-      </form>
+        {msg && <div className={`auth-message ${msg.includes("Successful") ? "success" : ""}`}>{msg}</div>}
+
+        <p className="auth-link-text">
+          Already have an account?
+          <Link to="/login" className="auth-link">
+            Log In
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    height: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#020617"
-  },
-  card: {
-    padding: "30px",
-    borderRadius: "10px",
-    background: "white",
-    width: "350px",
-    textAlign: "center"
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    margin: "10px 0"
-  },
-  button: {
-    width: "100%",
-    padding: "10px",
-    background: "#22c55e",
-    color: "white",
-    border: "none",
-    borderRadius: "5px"
-  }
-};
