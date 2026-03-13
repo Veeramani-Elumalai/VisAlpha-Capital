@@ -38,6 +38,8 @@ export default function Dashboard() {
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState("");
   const [adding, setAdding] = useState(false);
+  const [reportSignals, setReportSignals] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -83,6 +85,33 @@ export default function Dashboard() {
 
     fetchPortfolio();
   }, []);
+
+  useEffect(() => {
+    const checkReport = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/daily-report", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const allSignals = [...(res.data.positiveSignals || []), ...(res.data.negativeSignals || [])];
+        setReportSignals(allSignals);
+        
+        // Find ALL matching signals for the portfolio
+        if (portfolio.length > 0) {
+          const heldSymbols = portfolio.map(s => s.symbol);
+          const matchingSignals = allSignals.filter(sig => heldSymbols.includes(sig.stock));
+          
+          if (matchingSignals.length > 0) {
+            setAlerts(matchingSignals);
+          }
+        }
+      } catch (e) {
+        console.log("Daily report check failed", e.message);
+      }
+    };
+    checkReport();
+  }, [portfolio]);
 
   useEffect(() => {
     const loadPerf = async () => {
@@ -243,6 +272,93 @@ export default function Dashboard() {
           ✨ AI Advisor
         </a>
       </header>
+
+      {/* ---------- CONSOLIDATED NOTIFICATION ALERT ---------- */}
+      {alerts.length > 0 && (
+        <div 
+          className="report-alert-unified slideDown-animation" 
+          onClick={() => navigate('/daily-report')}
+          style={{
+            cursor: 'pointer',
+            backgroundColor: '#1e293b',
+            border: '1px solid #3b82f6',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '28px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '16px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+            animation: 'slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            position: 'relative'
+          }}
+        >
+          <div style={{
+            backgroundColor: '#3b82f6',
+            borderRadius: '12px',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px',
+            flexShrink: 0,
+            marginTop: '2px'
+          }}>
+            🚀
+          </div>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ margin: '0 0 12px 0', color: '#f8fafc', fontSize: '18px' }}>
+              AI Market Alert: {alerts.length} action item{alerts.length > 1 ? 's' : ''} in your portfolio
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {alerts.map((alert, idx) => (
+                <div key={idx} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  padding: '8px 12px',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ 
+                    color: alert.type === 'negative' ? '#ef4444' : '#22c55e',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    padding: '2px 6px',
+                    backgroundColor: alert.type === 'negative' ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
+                    borderRadius: '4px',
+                    minWidth: '50px',
+                    textAlign: 'center'
+                  }}>
+                    {alert.stock}
+                  </span>
+                  <p style={{ margin: 0, color: '#cbd5e1', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {alert.headline}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: '12px 0 0 0', color: '#3b82f6', fontSize: '13px', fontWeight: '600' }}>
+              Click to view full AI Analysis →
+            </p>
+          </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setAlerts([]); }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#64748b', 
+              cursor: 'pointer',
+              fontSize: '24px',
+              padding: '0',
+              lineHeight: '1'
+            }}
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* ---------- P/L Summary ---------- */}
 
