@@ -211,7 +211,8 @@ export async function generateDailyReport(force = false) {
 
     // Idempotency guard
     if (!force) {
-        const existing = await DailyReport.findOne({ date: today });
+        // Also fetch the latest one if multiples were generated concurrently
+        const existing = await DailyReport.findOne({ date: today }).sort({ generatedAt: -1 });
         if (existing) {
             console.log(`[DailyReport] Report for ${today} already exists — skipping`);
             return existing;
@@ -254,5 +255,5 @@ export async function generateDailyReport(force = false) {
  */
 export async function getTodayReport() {
     const today = todayDateString();
-    return DailyReport.findOne({ date: today }).lean();
+    return DailyReport.findOne({ date: today }).sort({ generatedAt: -1 }).lean();
 }

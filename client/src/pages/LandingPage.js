@@ -20,8 +20,8 @@ const LandingPage = () => {
       <main className="landing-main">
         <div className="hero-section">
           <h1 className="hero-title">
-            Intelligent Financial Insights <br />
-            <span className="highlight">Powered by AI</span>
+            An AI-Driven Investment Tracking And Market Intelligence Platform <br />
+            <span className="highlight">- VisAlpha Capital</span>
           </h1>
           <p className="hero-subtitle">
             Uncover alpha with our advanced market screener, sector analysis, and AI-driven daily reports. Take control of your portfolio today.

@@ -14,12 +14,19 @@ const DailyReportPage = () => {
         fetchReport();
     }, []);
 
-    const fetchReport = async () => {
+    const fetchReport = async (force = false) => {
         setLoading(true);
         setError('');
         try {
-            const response = await api.get('/api/daily-report');
-            setReport(response.data);
+            const endpoint = force ? '/api/daily-report/generate' : '/api/daily-report';
+            const method = force ? 'post' : 'get';
+            
+            const response = await api({
+                method,
+                url: endpoint
+            });
+            
+            setReport(force ? response.data.report : response.data);
         } catch (err) {
             console.error(err);
             setError('Failed to fetch the daily market report. Please ensure your Groq API key is set.');
@@ -43,7 +50,7 @@ const DailyReportPage = () => {
                 <div className="error-message" style={{ maxWidth: '400px', textAlign: 'center' }}>
                     {error}
                 </div>
-                <button onClick={fetchReport} style={styles.retryBtn}>Retry</button>
+                <button onClick={() => fetchReport(false)} style={styles.retryBtn}>Retry</button>
                 <a href="/dashboard" style={styles.backLink}>Back to Dashboard</a>
             </div>
         );
@@ -55,11 +62,30 @@ const DailyReportPage = () => {
             <header style={styles.header}>
                 <div>
                     <h1 style={styles.title}>AI Daily Market Report</h1>
-                    <p style={styles.subtitle}>
-                        {report?.date ? new Date(report.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Today'}
-                    </p>
+                    <div style={styles.statusRow}>
+                        <p style={styles.subtitle}>
+                            {report?.date ? new Date(report.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Today'}
+                        </p>
+                        {report?.generatedAt && (
+                            <span style={styles.dot}>•</span>
+                        )}
+                        {report?.generatedAt && (
+                            <span style={styles.timestamp}>
+                                Updated {new Date(report.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <a href="/dashboard" style={styles.dashboardBtn}>Dashboard</a>
+                <div style={styles.headerActions}>
+                    <button 
+                        onClick={() => fetchReport(true)} 
+                        style={styles.refreshBtn}
+                        title="Regenerate with latest news"
+                    >
+                        🔄 Refresh News
+                    </button>
+                    <a href="/dashboard" style={styles.dashboardBtn}>Dashboard</a>
+                </div>
             </header>
 
             <div style={styles.content}>
@@ -159,6 +185,37 @@ const styles = {
         fontWeight: '600',
         transition: 'all 0.2s',
         border: '1px solid #334155',
+    },
+    refreshBtn: {
+        backgroundColor: 'transparent',
+        color: '#3b82f6',
+        border: '1px solid #3b82f6',
+        padding: '10px 16px',
+        borderRadius: '8px',
+        fontSize: '14px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+    },
+    headerActions: {
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center',
+    },
+    statusRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginTop: '8px',
+    },
+    dot: {
+        color: '#475569',
+        fontSize: '12px',
+    },
+    timestamp: {
+        color: '#64748b',
+        fontSize: '14px',
+        fontWeight: '500',
     },
     content: {
         display: 'flex',
