@@ -62,7 +62,7 @@ export default function SectorAnalysis() {
         } else {
             fetchSectorData(sector);
         }
-    }, [searchParams, fetchSectorData]);
+    }, [searchParams, fetchSectorData, sector]);
 
     const sortArray = useCallback((arr, key, direction) => {
         const sorted = [...arr].sort((a, b) => {

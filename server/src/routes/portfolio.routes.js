@@ -146,8 +146,6 @@ router.delete("/remove/:symbol", auth, async (req, res) => {
   }
 });
 
-export default router;
-
 /*
  Chart graph
 */
@@ -159,47 +157,61 @@ router.get("/performance", auth, async (req, res) => {
       return res.json({ history: [], benchmark: [] });
 
     const days = Number(req.query.days) || 30;
-
-    let dateMap = {};
-
-    for (const stock of portfolio.stocks) {
-      const { data } = await axios.get(
-        `http://127.0.0.1:8000/history/${stock.symbol}?days=${days}`
-      );
-
-      data.history.forEach(day => {
-        if (!dateMap[day.date]) dateMap[day.date] = 0;
-        dateMap[day.date] += day.price * stock.quantity;
-      });
-    }
-
-    const raw = Object.keys(dateMap).map(date => ({
-      date,
-      value: Number(dateMap[date].toFixed(2)),
-    }));
-
-    const base = raw[0]?.value || 1;
-
-    const portfolioHistory = raw.map(p => ({
-      date: p.date,
-      value: Number(((p.value / base) * 100).toFixed(2))
-    }));
-
-
-    // Benchmark
     const index = req.query.benchmark || "^GSPC";
-    const benchRes = await axios.get(
-      `http://127.0.0.1:8000/history/${index}?days=${days}`
+
+    // 1. Fetch all stock data and the benchmark data in parallel
+    const stockPromises = portfolio.stocks.map((stock) =>
+      axios
+        .get(`http://127.0.0.1:8000/history/${stock.symbol}?days=${days + 5}`) // Fetch slightly extra to ensure overlap
+        .then((res) => ({ symbol: stock.symbol, quantity: stock.quantity, history: res.data.history }))
+        .catch(() => ({ symbol: stock.symbol, quantity: stock.quantity, history: [] }))
     );
 
-    const benchRaw = benchRes.data.history;
-    const benchBase = benchRaw[0]?.price || 1;
+    const [stockResults, benchRes] = await Promise.all([
+      Promise.all(stockPromises),
+      axios.get(`http://127.0.0.1:8000/history/${index}?days=${days}`).catch(() => ({ data: { history: [] } })),
+    ]);
 
-    const benchmark = benchRaw.map(h => ({
-      date: h.date,
-      value: Number(((h.price / benchBase) * 100).toFixed(2))
+    const benchHistory = benchRes.data.history;
+    if (benchHistory.length === 0) return res.json({ portfolio: [], benchmark: [] });
+
+    // 2. Identify master timeline from Benchmark (it sets the dates we care about)
+    const masterTimeline = benchHistory.map((h) => h.date);
+
+    // 3. For each stock, create a Map for quick lookup and store the last known price for forward-filling
+    const stockDataMaps = stockResults.map((s) => {
+      const map = new Map();
+      s.history.forEach((h) => map.set(h.date, h.price));
+      return { symbol: s.symbol, quantity: s.quantity, priceMap: map, lastPrice: 0 };
+    });
+
+    // 4. Compute Portfolio Value for every date in the timeline using forward-filling
+    const portfolioRaw = [];
+    masterTimeline.forEach((date) => {
+      let dailyTotal = 0;
+      stockDataMaps.forEach((stock) => {
+        const price = stock.priceMap.get(date);
+        if (price !== undefined && price !== null) {
+          stock.lastPrice = price; // Update last known price
+        }
+        dailyTotal += stock.lastPrice * stock.quantity;
+      });
+      portfolioRaw.push({ date, value: dailyTotal });
+    });
+
+    // 5. Normalize both series to 100
+    const portBase = portfolioRaw.find((p) => p.value > 0)?.value || 1;
+    const benchBase = benchHistory[0]?.price || 1;
+
+    const portfolioHistory = portfolioRaw.map((p) => ({
+      date: p.date,
+      value: Number(((p.value / portBase) * 100).toFixed(2)),
     }));
 
+    const benchmark = benchHistory.map((h) => ({
+      date: h.date,
+      value: Number(((h.price / benchBase) * 100).toFixed(2)),
+    }));
 
     res.json({ portfolio: portfolioHistory, benchmark });
 
@@ -208,4 +220,6 @@ router.get("/performance", auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+export default router;
 

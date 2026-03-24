@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getScreenerData } from "../services/screenerService";
 import CompareInput from "../components/compare/CompareInput";
 import SmallLineChart from "../components/compare/SmallLineChart";
 import ComparisonRow from "../components/compare/ComparisonRow";
-import { useNavigate } from "react-router-dom";
 
 export default function Compare() {
     const [stockA, setStockA] = useState("");
@@ -12,7 +11,6 @@ export default function Compare() {
     const [dataB, setDataB] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const navigate = useNavigate();
 
     // Helper to compute Valuation Score (0-100)
     const calculateValuationScore = (data) => {

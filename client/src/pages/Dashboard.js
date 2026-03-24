@@ -38,7 +38,6 @@ export default function Dashboard() {
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState("");
   const [adding, setAdding] = useState(false);
-  const [reportSignals, setReportSignals] = useState([]);
   const [alerts, setAlerts] = useState([]);
 
   const handleLogout = () => {
@@ -95,7 +94,6 @@ export default function Dashboard() {
         });
         
         const allSignals = [...(res.data.positiveSignals || []), ...(res.data.negativeSignals || [])];
-        setReportSignals(allSignals);
         
         // Find ALL matching signals for the portfolio
         if (portfolio.length > 0) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import NewsCard from '../components/news/NewsCard';
 
@@ -28,11 +28,7 @@ const News = () => {
 
     const categories = ['All', 'Stocks', 'Stock Industry', 'Earnings', 'Economy', 'Global', 'Crypto'];
 
-    useEffect(() => {
-        fetchNews();
-    }, [category]);
-
-    const fetchNews = async () => {
+    const fetchNews = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
@@ -50,7 +46,11 @@ const News = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [category]);
+
+    useEffect(() => {
+        fetchNews();
+    }, [fetchNews]);
 
     const isIndustryView = category === 'Stock Industry';
     const isEarningsView = category === 'Earnings';
