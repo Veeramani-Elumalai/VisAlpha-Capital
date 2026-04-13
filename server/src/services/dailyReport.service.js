@@ -159,9 +159,10 @@ The JSON structure must be exactly:
   ]
 }
 Rules:
-- Match headlines to portfolio stocks where relevant; if no match use a relevant sector ETF ticker (e.g. XLK, XLE)
+- Match headlines exclusively to portfolio stocks. If there are no relevant headlines for a stock, or if the headlines do not present a clear opportunity or risk for that stock, DO NOT include it in the report.
+- Do NOT use sector ETF tickers or unrelated stocks as fallbacks.
+- Keep the arrays empty if no genuine signals are detected.
 - FOR EACH SIGNAL, YOU MUST INCLUDE THE EXACT URL FROM THE NEWS HEADLINE PROVIDED
-- Include 2 to 4 entries per signal list
 - reason must be 2-3 sentences explaining the market impact
 - suggestedAction must be one of: Buy, Hold, Sell, Add, Reduce, Watch
 - Respond with ONLY the JSON — nothing else`;
