@@ -106,7 +106,13 @@ const DailyReportPage = () => {
                         ))}
                     </div>
                     {(!report?.positiveSignals || report.positiveSignals.length === 0) && (
-                        <p style={styles.emptyText}>No positive signals detected for today.</p>
+                        <div style={styles.emptyBanner}>
+                            <span style={styles.emptyIcon}>✅</span>
+                            <div>
+                                <p style={styles.emptyTitle}>No Action Required</p>
+                                <p style={styles.emptySubtitle}>No opportunity signals were detected in your portfolio sectors today. Check back tomorrow.</p>
+                            </div>
+                        </div>
                     )}
                 </section>
 
@@ -127,7 +133,13 @@ const DailyReportPage = () => {
                         ))}
                     </div>
                     {(!report?.negativeSignals || report.negativeSignals.length === 0) && (
-                        <p style={styles.emptyText}>No major risks detected in your portfolio sectors.</p>
+                        <div style={styles.emptyBanner}>
+                            <span style={styles.emptyIcon}>🛡️</span>
+                            <div>
+                                <p style={styles.emptyTitle}>No Action Required</p>
+                                <p style={styles.emptySubtitle}>No risk alerts were detected in your portfolio sectors today. Your holdings look stable.</p>
+                            </div>
+                        </div>
                     )}
                 </section>
             </div>
@@ -259,6 +271,33 @@ const styles = {
         color: '#475569',
         fontStyle: 'italic',
         marginTop: '12px',
+    },
+    emptyBanner: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '16px',
+        backgroundColor: '#0f172a',
+        border: '1px solid #1e293b',
+        borderRadius: '12px',
+        padding: '20px 24px',
+        marginTop: '8px',
+    },
+    emptyIcon: {
+        fontSize: '28px',
+        lineHeight: '1',
+        flexShrink: 0,
+    },
+    emptyTitle: {
+        margin: '0 0 4px 0',
+        color: '#f1f5f9',
+        fontWeight: '700',
+        fontSize: '16px',
+    },
+    emptySubtitle: {
+        margin: 0,
+        color: '#64748b',
+        fontSize: '14px',
+        lineHeight: '1.5',
     },
     centerContainer: {
         display: 'flex',
