@@ -4,6 +4,7 @@ dotenv.config(); // ✅ MUST be first
 import express from "express";
 import cors from "cors";
 import connectDB from "./src/config/db.js";
+import { wakeMarketService } from "./src/utils/marketService.js";
 
 const app = express();
 
@@ -12,6 +13,9 @@ app.use(express.json());
 
 // Database connect
 connectDB();
+
+// Wake up the Python market service on startup (handles Render free-tier cold starts)
+wakeMarketService();
 
 // Routes (import AFTER dotenv)
 import authRoutes from "./src/routes/auth.routes.js";
