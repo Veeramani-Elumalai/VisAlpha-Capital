@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import NewsCard from '../components/news/NewsCard';
 
 // Badge colour map — shared by Stock Industry + Earnings
@@ -38,7 +38,7 @@ const News = () => {
                 'Earnings': 'Earnings',
             };
             const queryParam = paramMap[category] || category;
-            const response = await axios.get(`/api/news?category=${queryParam}`);
+            const response = await api.get(`/api/news?category=${queryParam}`);
             setNews(response.data);
         } catch (err) {
             setError('Failed to load market news. Please try again later.');

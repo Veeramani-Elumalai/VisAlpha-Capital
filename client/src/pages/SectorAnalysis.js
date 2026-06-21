@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -40,7 +40,7 @@ export default function SectorAnalysis() {
         setLoading(true);
         setError(null);
         try {
-            const res = await axios.get(`http://localhost:5000/api/sector/${sectorName}`);
+            const res = await api.get(`/api/sector/${sectorName}`);
             setData(res.data);
         } catch (err) {
             if (err.response && err.response.status === 404) {
