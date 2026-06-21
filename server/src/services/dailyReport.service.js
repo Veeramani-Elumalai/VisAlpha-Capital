@@ -1,11 +1,11 @@
 /**
  * dailyReport.service.js
  * ─────────────────────────────────────────────────────────────────
- * Orchestrates:
+ * Orchestrates per-user daily reports:
  *   1. News fetching from NewsAPI (four categories, top-10 total)
- *   2. Portfolio holdings from MongoDB
- *   3. LLM structured analysis (Groq Llama 3)
- *   4. Persistence to DailyReport collection (idempotent)
+ *   2. User's own portfolio holdings from MongoDB
+ *   3. LLM structured analysis (Groq Llama 3) — personalised to user's stocks
+ *   4. Persistence to DailyReport collection (one per user per day)
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -91,34 +91,29 @@ async function fetchTopHeadlines() {
     return combined;
 }
 
-// ── 2. Portfolio Holdings ────────────────────────────────────────
+// ── 2. Portfolio Holdings (Per-User) ────────────────────────────
 
 /**
- * Returns all holdings across every user as { symbol, sector }[].
- * We aggregate across all portfolios so the report is market-wide.
+ * Returns the specific user's holdings as { symbol, sector }[].
+ * Returns empty array if the user has no portfolio.
+ *
+ * @param {string} userId — MongoDB ObjectId string of the requesting user
  */
-async function fetchAllHoldings() {
+async function fetchUserHoldings(userId) {
     try {
-        const portfolios = await Portfolio.find({});
-        const seen = new Set();
+        const portfolio = await Portfolio.findOne({ userId });
+        if (!portfolio || portfolio.stocks.length === 0) return [];
+
         const holdings = [];
-
-        for (const p of portfolios) {
-            for (const stock of p.stocks) {
-                if (seen.has(stock.symbol)) continue;
-                seen.add(stock.symbol);
-
-                // Try to get sector info from market service
-                let sector = "Unknown";
-                try {
-                    const live = await getLivePrice(stock.symbol);
-                    if (live?.sector) sector = live.sector;
-                } catch {
-                    // ignore — sector is optional
-                }
-
-                holdings.push({ symbol: stock.symbol, sector });
+        for (const stock of portfolio.stocks) {
+            let sector = "Unknown";
+            try {
+                const live = await getLivePrice(stock.symbol);
+                if (live?.sector) sector = live.sector;
+            } catch {
+                // ignore — sector is optional
             }
+            holdings.push({ symbol: stock.symbol, sector });
         }
 
         return holdings;
@@ -202,43 +197,50 @@ Rules:
 // ── 4. Orchestrator ──────────────────────────────────────────────
 
 /**
- * Generates (or retrieves) today's daily report.
+ * Generates (or retrieves) today's daily report for a specific user.
  *
- * @param {boolean} force  If true, regenerate even if today's report exists
- * @returns {Promise<DailyReport>}
+ * @param {string}  userId  — MongoDB ObjectId of the requesting user
+ * @param {boolean} force   — If true, regenerate even if today's report exists
+ * @returns {Promise<{ report: DailyReport|null, hasPortfolio: boolean }>}
  */
-export async function generateDailyReport(force = false) {
+export async function generateDailyReport(userId, force = false) {
     const today = todayDateString();
 
-    // Idempotency guard
+    // Idempotency guard — return existing report unless forced
     if (!force) {
-        // Also fetch the latest one if multiples were generated concurrently
-        const existing = await DailyReport.findOne({ date: today }).sort({ generatedAt: -1 });
+        const existing = await DailyReport.findOne({ userId, date: today }).sort({ generatedAt: -1 });
         if (existing) {
-            console.log(`[DailyReport] Report for ${today} already exists — skipping`);
-            return existing;
+            console.log(`[DailyReport] Report for user ${userId} on ${today} already exists — skipping`);
+            return { report: existing, hasPortfolio: true };
         }
     }
 
-    console.log(`[DailyReport] Generating report for ${today} …`);
+    console.log(`[DailyReport] Generating report for user ${userId} on ${today} …`);
 
-    const [headlines, holdings] = await Promise.all([
-        fetchTopHeadlines(),
-        fetchAllHoldings(),
-    ]);
+    // Fetch this user's holdings first
+    const holdings = await fetchUserHoldings(userId);
 
-    console.log(`[DailyReport] Fetched ${headlines.length} headlines, ${holdings.length} holdings`);
+    // If the user has no stocks, return early — no point calling LLM
+    if (holdings.length === 0) {
+        console.log(`[DailyReport] User ${userId} has no portfolio — skipping LLM call`);
+        return { report: null, hasPortfolio: false };
+    }
+
+    const headlines = await fetchTopHeadlines();
+
+    console.log(`[DailyReport] Fetched ${headlines.length} headlines, ${holdings.length} holdings for user ${userId}`);
 
     const llmResult = await callLLM(headlines, holdings);
 
     console.log(
-        `[DailyReport] LLM returned ${llmResult.positiveSignals.length} positive, ${llmResult.negativeSignals.length} negative signals`
+        `[DailyReport] LLM returned ${llmResult.positiveSignals.length} positive, ${llmResult.negativeSignals.length} negative signals for user ${userId}`
     );
 
     // Upsert — replace if force, otherwise insert
     const report = await DailyReport.findOneAndUpdate(
-        { date: today },
+        { userId, date: today },
         {
+            userId,
             date: today,
             positiveSignals: llmResult.positiveSignals,
             negativeSignals: llmResult.negativeSignals,
@@ -247,14 +249,16 @@ export async function generateDailyReport(force = false) {
         { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    console.log(`[DailyReport] Report saved for ${today}`);
-    return report;
+    console.log(`[DailyReport] Report saved for user ${userId} on ${today}`);
+    return { report, hasPortfolio: true };
 }
 
 /**
- * Returns today's stored report, or null if not yet generated.
+ * Returns today's stored report for a specific user, or null if not yet generated.
+ *
+ * @param {string} userId — MongoDB ObjectId of the requesting user
  */
-export async function getTodayReport() {
+export async function getTodayReport(userId) {
     const today = todayDateString();
-    return DailyReport.findOne({ date: today }).sort({ generatedAt: -1 }).lean();
+    return DailyReport.findOne({ userId, date: today }).sort({ generatedAt: -1 }).lean();
 }

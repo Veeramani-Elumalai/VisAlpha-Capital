@@ -8,6 +8,7 @@ const DailyReportPage = () => {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [hasPortfolio, setHasPortfolio] = useState(true);
     const [selectedSignal, setSelectedSignal] = useState(null);
 
     useEffect(() => {
@@ -20,13 +21,18 @@ const DailyReportPage = () => {
         try {
             const endpoint = force ? '/api/daily-report/generate' : '/api/daily-report';
             const method = force ? 'post' : 'get';
-            
-            const response = await api({
-                method,
-                url: endpoint
-            });
-            
-            setReport(force ? response.data.report : response.data);
+
+            const response = await api({ method, url: endpoint });
+            const data = force ? response.data.report : response.data;
+
+            // Check if the user has a portfolio
+            if (response.data.hasPortfolio === false) {
+                setHasPortfolio(false);
+                setReport(null);
+            } else {
+                setHasPortfolio(true);
+                setReport(data);
+            }
         } catch (err) {
             console.error(err);
             setError('Failed to fetch the daily market report. Please ensure your Groq API key is set.');
@@ -52,6 +58,22 @@ const DailyReportPage = () => {
                 </div>
                 <button onClick={() => fetchReport(false)} style={styles.retryBtn}>Retry</button>
                 <a href="/dashboard" style={styles.backLink}>Back to Dashboard</a>
+            </div>
+        );
+    }
+
+    // Empty portfolio state — user has no stocks yet
+    if (!hasPortfolio && !loading && !error) {
+        return (
+            <div style={styles.centerContainer}>
+                <div style={{ fontSize: '64px', marginBottom: '24px' }}>📭</div>
+                <h2 style={{ color: '#f1f5f9', fontSize: '24px', margin: '0 0 12px' }}>No Portfolio Yet</h2>
+                <p style={{ color: '#94a3b8', fontSize: '16px', textAlign: 'center', maxWidth: '400px', lineHeight: '1.6' }}>
+                    Add stocks to your portfolio on the Dashboard to get personalized AI-powered daily market signals tailored to your holdings.
+                </p>
+                <a href="/dashboard" style={{ ...styles.retryBtn, display: 'inline-block', marginTop: '24px', textDecoration: 'none', textAlign: 'center' }}>
+                    ➕ Go Add Stocks
+                </a>
             </div>
         );
     }

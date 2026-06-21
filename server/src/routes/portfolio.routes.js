@@ -5,6 +5,7 @@ import { getLivePrice } from "../utils/marketService.js";
 import axios from "axios";
 
 const router = express.Router();
+const MARKET_SERVICE_URL = process.env.MARKET_SERVICE_URL || "http://127.0.0.1:8000";
 
 /*
  Add Stock to Portfolio (with validation)
@@ -25,7 +26,7 @@ router.post("/add", auth, async (req, res) => {
     let liveData;
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/price/${symbol}`
+        `${MARKET_SERVICE_URL}/price/${symbol}`
       );
       liveData = response.data;
     } catch {
@@ -162,14 +163,14 @@ router.get("/performance", auth, async (req, res) => {
     // 1. Fetch all stock data and the benchmark data in parallel
     const stockPromises = portfolio.stocks.map((stock) =>
       axios
-        .get(`http://127.0.0.1:8000/history/${stock.symbol}?days=${days + 5}`) // Fetch slightly extra to ensure overlap
+        .get(`${MARKET_SERVICE_URL}/history/${stock.symbol}?days=${days + 5}`) // Fetch slightly extra to ensure overlap
         .then((res) => ({ symbol: stock.symbol, quantity: stock.quantity, history: res.data.history }))
         .catch(() => ({ symbol: stock.symbol, quantity: stock.quantity, history: [] }))
     );
 
     const [stockResults, benchRes] = await Promise.all([
       Promise.all(stockPromises),
-      axios.get(`http://127.0.0.1:8000/history/${index}?days=${days}`).catch(() => ({ data: { history: [] } })),
+      axios.get(`${MARKET_SERVICE_URL}/history/${index}?days=${days}`).catch(() => ({ data: { history: [] } })),
     ]);
 
     const benchHistory = benchRes.data.history;

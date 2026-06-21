@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { loginUser } from "../services/authService";
+import { storeUserSession } from "../services/api";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,8 +19,9 @@ export default function Login() {
     try {
       const res = await loginUser(email, password);
 
-      // save token
+      // Store token AND user identity for cache namespacing
       localStorage.setItem("token", res.token);
+      storeUserSession(res.user); // { id, name, email, picture }
 
       setMsg("Login Successful");
       setTimeout(() => navigate("/dashboard"), 500);
@@ -66,16 +70,17 @@ export default function Login() {
           <GoogleLogin
             onSuccess={async (credentialResponse) => {
               const googleToken = credentialResponse.credential;
-              
+
               try {
-                const res = await axios.post("http://localhost:5000/api/auth/google", {
+                const res = await axios.post(`${API_URL}/api/auth/google`, {
                   token: googleToken
                 });
 
                 localStorage.setItem("token", res.data.token);
+                storeUserSession(res.data.user);
                 navigate("/dashboard");
               } catch (err) {
-                setMsg("Google Login Failed");
+                setMsg(err.response?.data?.msg || "Google Login Failed");
               }
             }}
             onError={() => {
