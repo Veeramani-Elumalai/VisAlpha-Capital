@@ -15,7 +15,7 @@ price_cache = {}
 history_cache = {}
 CACHE_TTL = 300  # 5 minutes
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {"message": "Market Service Running"}
 
