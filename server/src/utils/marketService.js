@@ -17,12 +17,13 @@ export const getLivePrice = async (symbol, retries = 1) => {
     const res = await axiosMarket.get(`/price/${symbol}`);
     return res.data;
   } catch (err) {
-    if (retries > 0) {
+    const status = err.response?.status;
+    if (retries > 0 && status !== 429) {
       console.warn(`[MarketService] Retrying price fetch for ${symbol}…`);
       await new Promise((r) => setTimeout(r, 3000)); // wait 3s before retry
       return getLivePrice(symbol, retries - 1);
     }
-    console.error("[MarketService] getLivePrice failed:", err.message);
+    console.error(`[MarketService] getLivePrice failed for ${symbol}:`, err.message);
     return null;
   }
 };

@@ -23,13 +23,14 @@ async function testGroq() {
     const groq = new Groq({ apiKey });
 
     try {
-        console.log("⏳ Sending request to llama-3.3-70b-versatile...");
+        const targetModel = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+        console.log(`⏳ Sending request to ${targetModel}...`);
         const response = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: "You are a helpful assistant." },
                 { role: "user", content: "Say 'Hello from Groq! The integration is successful.' if you can read this." }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: targetModel,
             temperature: 0.2,
         });
 

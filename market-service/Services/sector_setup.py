@@ -3,7 +3,12 @@ import pandas as pd
 import numpy as np
 import traceback
 import math
+import time
 from concurrent.futures import ThreadPoolExecutor
+
+# In-memory cache for sector data (10-minute TTL to reduce Yahoo Finance rate limits)
+sector_cache = {}
+SECTOR_CACHE_TTL = 600
 
 # Map user-friendly sector names to yfinance sector keys
 SECTOR_KEYS = {
@@ -89,6 +94,13 @@ def fetch_single_ticker(symbol, sector_name):
 
 def get_sector_data(sector_name):
     try:
+        now = time.time()
+        normalized_key = sector_name.strip().lower()
+        if normalized_key in sector_cache:
+            cached_data, timestamp = sector_cache[normalized_key]
+            if now - timestamp < SECTOR_CACHE_TTL:
+                return cached_data
+
         mapped_key = None
         normalized_name = sector_name.capitalize()
         
@@ -115,8 +127,8 @@ def get_sector_data(sector_name):
         if not tickers:
             return {"error": f"No ticker symbols found for {normalized_name}"}
         
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            results = list(executor.map(lambda s: fetch_single_ticker(s, normalized_name), tickers[:50]))
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            results = list(executor.map(lambda s: fetch_single_ticker(s, normalized_name), tickers[:25]))
         
         data = [r for r in results if r is not None]
 
@@ -213,7 +225,7 @@ def get_sector_data(sector_name):
             
             industries.sort(key=lambda x: x["totalMarketCap"], reverse=True)
 
-        return {
+        result = {
             "sector": normalized_name,
             "stats": {
                 "avgPe": round(float(avg_pe), 2),
@@ -226,6 +238,10 @@ def get_sector_data(sector_name):
             "industries": industries,
             "stocks": data
         }
+
+        # Cache result for 10 minutes
+        sector_cache[normalized_key] = (result, now)
+        return result
 
     except Exception as e:
         print(f"CRITICAL ERROR: {str(e)}")

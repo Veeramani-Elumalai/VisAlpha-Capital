@@ -108,7 +108,8 @@ async function fetchUserHoldings(userId) {
         for (const stock of portfolio.stocks) {
             let sector = "Unknown";
             try {
-                const live = await getLivePrice(stock.symbol);
+                // Pass retries = 0 to prevent excessive retry delay during report generation
+                const live = await getLivePrice(stock.symbol, 0);
                 if (live?.sector) sector = live.sector;
             } catch {
                 // ignore — sector is optional
@@ -126,6 +127,7 @@ async function fetchUserHoldings(userId) {
 
 /**
  * Sends structured context to Groq and returns parsed JSON.
+ * Tries models in candidate order to prevent 404 model_not_found failures.
  * Prompt enforces strict JSON output — no markdown, no prose.
  */
 async function callLLM(headlines, holdings) {
@@ -164,14 +166,42 @@ Rules:
 
     const userPrompt = `Today's Portfolio Holdings:\n${holdingLines}\n\nTop 10 Market Headlines:\n${headlineLines}\n\nGenerate the daily market signal report.`;
 
-    const response = await getGroqClient().chat.completions.create({
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-        ],
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.2,
-    });
+    const candidateModels = [
+        process.env.GROQ_MODEL,
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama3-70b-8192",
+        "mixtral-8x7b-32768"
+    ].filter(Boolean);
+
+    const modelsToTry = [...new Set(candidateModels)];
+
+    let response = null;
+    let lastError = null;
+
+    for (const model of modelsToTry) {
+        try {
+            response = await getGroqClient().chat.completions.create({
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt },
+                ],
+                model,
+                temperature: 0.2,
+            });
+            if (response?.choices?.[0]?.message?.content) {
+                console.log(`[DailyReport] Successfully generated report using model '${model}'`);
+                break;
+            }
+        } catch (err) {
+            lastError = err;
+            console.warn(`[DailyReport] Model '${model}' failed: ${err.message}. Trying next fallback model…`);
+        }
+    }
+
+    if (!response) {
+        throw new Error(`All Groq LLM models failed. Last error: ${lastError?.message || "Unknown error"}`);
+    }
 
     const raw = response.choices[0]?.message?.content?.trim();
     if (!raw) throw new Error("Groq returned empty response");
