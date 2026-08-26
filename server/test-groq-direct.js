@@ -23,7 +23,7 @@ async function testGroq() {
     const groq = new Groq({ apiKey });
 
     try {
-        const targetModel = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+        const targetModel = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
         console.log(`⏳ Sending request to ${targetModel}...`);
         const response = await groq.chat.completions.create({
             messages: [

@@ -166,12 +166,27 @@ Rules:
 
     const userPrompt = `Today's Portfolio Holdings:\n${holdingLines}\n\nTop 10 Market Headlines:\n${headlineLines}\n\nGenerate the daily market signal report.`;
 
+    let dynamicModels = [];
+    try {
+        const modelsList = await getGroqClient().models.list();
+        if (modelsList?.data) {
+            dynamicModels = modelsList.data
+                .map(m => m.id)
+                .filter(id => !id.includes("whisper") && !id.includes("guard") && !id.includes("orpheus"));
+        }
+    } catch (e) {
+        // Ignore listing errors and rely on standard candidate list
+    }
+
     const candidateModels = [
         process.env.GROQ_MODEL,
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.6-27b",
+        "groq/compound",
+        ...dynamicModels,
         "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-        "llama3-70b-8192",
-        "mixtral-8x7b-32768"
+        "llama-3.1-8b-instant"
     ].filter(Boolean);
 
     const modelsToTry = [...new Set(candidateModels)];

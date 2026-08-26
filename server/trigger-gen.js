@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
 import { generateDailyReport } from "./src/services/dailyReport.service.js";
+import Portfolio from "./src/models/Portfolio.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +12,17 @@ dotenv.config({ path: path.resolve(__dirname, ".env") });
 async function manualTrigger() {
     try {
         await mongoose.connect(process.env.MONGO_URI);
-        console.log("📡 Triggering fresh Groq generation...");
+        const samplePortfolio = await Portfolio.findOne();
+        if (!samplePortfolio) {
+            console.error("❌ No portfolio found in DB to test");
+            return;
+        }
+        const userId = samplePortfolio.userId;
+        console.log(`📡 Triggering fresh Groq generation for user ${userId}...`);
 
         // Force true to ignore any existing report
-        const report = await generateDailyReport(true);
+        const result = await generateDailyReport(userId, true);
+        const report = result.report;
 
         console.log("\n✅ Generation Complete!");
         console.log("Date:", report.date);
